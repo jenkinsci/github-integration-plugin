@@ -5,7 +5,7 @@ package org.jenkinsci.plugins.github.pullrequest;
  *
  * @author Kanstantsin Shautsou
  */
-enum GitHubPRTriggerMode {
+public enum GitHubPRTriggerMode {
     CRON ("Cron with persistence"),
     HEAVY_HOOKS ("Experimental: Hooks with persistence"),
     HEAVY_HOOKS_CRON ("NOT SUPPORTED: Hooks with persistence and periodic cron check"),
