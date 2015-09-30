@@ -17,6 +17,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 /**
  * Sets pr status for build caused by GitHubPRCause
  */
@@ -30,7 +32,7 @@ public class GitHubPRStatusBuilder extends Builder {
 
     @DataBoundConstructor
     public GitHubPRStatusBuilder(GitHubPRMessage statusMessage) {
-        if (statusMessage != null && statusMessage.getContent() != null && !"".equals(statusMessage.getContent())) {
+        if (statusMessage != null && isNotBlank(statusMessage.getContent())) {
             this.statusMessage = statusMessage;
         }
     }

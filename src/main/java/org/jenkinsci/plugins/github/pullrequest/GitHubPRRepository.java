@@ -1,23 +1,32 @@
 package org.jenkinsci.plugins.github.pullrequest;
 
+import com.cloudbees.jenkins.GitHubWebHook;
 import hudson.BulkChange;
 import hudson.Functions;
 import hudson.XmlFile;
-import hudson.model.*;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.Action;
+import hudson.model.Cause;
+import hudson.model.CauseAction;
+import hudson.model.Item;
+import hudson.model.ParametersAction;
+import hudson.model.Result;
+import hudson.model.Saveable;
 import hudson.model.listeners.SaveableListener;
 import hudson.util.FormValidation;
 import hudson.util.RunList;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * GitHub Repository local state = last trigger run() state.
@@ -62,9 +71,9 @@ public class GitHubPRRepository implements Action, Saveable {
      */
     public Map<Integer, List<AbstractBuild<?, ?>>> getAllPrBuilds() {
 
-        Map<Integer, List<AbstractBuild<?, ?>>> map = new HashMap<Integer, List<AbstractBuild<?, ?>>>();
+        Map<Integer, List<AbstractBuild<?, ?>>> map = new HashMap<>();
         final RunList<? extends AbstractBuild<?, ?>> builds = project.getBuilds();
-        LOGGER.debug("Got {} builds for project {}", builds.size(), project.getFullName());
+        LOGGER.debug("Got builds for project {}", project.getFullName());
 
         for (AbstractBuild build : builds) {
             GitHubPRCause cause = (GitHubPRCause) build.getCause(GitHubPRCause.class);
@@ -72,7 +81,7 @@ public class GitHubPRRepository implements Action, Saveable {
                 int number = cause.getNumber();
                 List<AbstractBuild<?, ?>> buildsByNumber = map.get(number);
                 if (buildsByNumber == null) {
-                    buildsByNumber = new ArrayList<AbstractBuild<?, ?>>();
+                    buildsByNumber = new ArrayList<>();
                     map.put(number, buildsByNumber);
                 }
                 buildsByNumber.add(build);
@@ -86,14 +95,17 @@ public class GitHubPRRepository implements Action, Saveable {
         return fullName;
     }
 
+    @Override
     public String getIconFileName() {
         return Functions.getResourcePath() + "/plugin/github-pullrequest/git-pull-request.svg";
     }
 
+    @Override
     public String getDisplayName() {
         return "GitHub PR";
     }
 
+    @Override
     public String getUrlName() {
         return "github-pullrequest";
     }
@@ -102,6 +114,7 @@ public class GitHubPRRepository implements Action, Saveable {
         return githubUrl;
     }
 
+    @Override
     public synchronized void save() throws IOException {
         if (BulkChange.contains(this)) {
             return;
@@ -111,11 +124,19 @@ public class GitHubPRRepository implements Action, Saveable {
         SaveableListener.fireOnChange(this, configFile);
     }
 
+    public void saveQuetly() {
+        try {
+            save();
+        } catch (IOException e) {
+            LOGGER.error("Can't save repository state, because: '{}'", e.getMessage(), e);
+        }
+    }
+
     @RequirePOST
     public FormValidation doClearRepo() throws IOException {
         FormValidation result;
         try {
-            Jenkins instance = GitHubPRTrigger.DescriptorImpl.getJenkinsInstance();
+            Jenkins instance = GitHubWebHook.getJenkinsInstance();
             if (instance.hasPermission(Item.DELETE)) {
                 pulls = new HashMap<>();
                 save();
@@ -135,7 +156,7 @@ public class GitHubPRRepository implements Action, Saveable {
     public FormValidation doRebuildFailed() throws IOException {
         FormValidation result;
         try {
-            Jenkins instance = GitHubPRTrigger.DescriptorImpl.getJenkinsInstance();
+            Jenkins instance = GitHubWebHook.getJenkinsInstance();
             if (instance.hasPermission(Item.BUILD)) {
                 Map<Integer, List<AbstractBuild<?, ?>>> builds = getAllPrBuilds();
                 for (List<AbstractBuild<?, ?>> buildList : builds.values()) {
@@ -150,7 +171,7 @@ public class GitHubPRRepository implements Action, Saveable {
             }
         } catch (Exception e) {
             LOGGER.error("Can't start rebuild", e.getMessage());
-            result = FormValidation.error("Can't start rebuild: " + e.getMessage());
+            result = FormValidation.error("Can't start rebuild: %s", e.getMessage());
         }
         return result;
     }
@@ -160,7 +181,7 @@ public class GitHubPRRepository implements Action, Saveable {
         FormValidation result;
 
         try {
-            Jenkins instance = GitHubPRTrigger.DescriptorImpl.getJenkinsInstance();
+            Jenkins instance = GitHubWebHook.getJenkinsInstance();
             if (!instance.hasPermission(Item.BUILD)) {
                 return FormValidation.error("Forbidden");
             }
@@ -190,18 +211,11 @@ public class GitHubPRRepository implements Action, Saveable {
     }
 
     private static boolean rebuild(AbstractBuild<?, ?> build) {
-        final List<Action> actions = new ArrayList<Action>();
-//
-//        List<Cause> causeList = new ArrayList<>(build.getCauses());
-//        causeList.add(new Cause.UserIdCause());
-//
-//        actions.add(build.getAction(ParametersAction.class));
-//        actions.add(new CauseAction(causeList));
-
-        actions.add(build.getAction(ParametersAction.class));
-        actions.add(build.getAction(CauseAction.class));
-
-        return build.getProject().scheduleBuild(0, new Cause.UserIdCause(), actions.toArray(new Action[actions.size()]));
+        return build.getProject().scheduleBuild(0,
+                new Cause.UserIdCause(),
+                build.getAction(ParametersAction.class),
+                build.getAction(CauseAction.class)
+        );
     }
 
     public void setProject(AbstractProject<?, ?> project) {

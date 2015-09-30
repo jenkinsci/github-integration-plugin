@@ -4,18 +4,24 @@ import hudson.Extension;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import jenkins.model.Jenkins;
+import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRPullRequest;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
-import org.kohsuke.github.*;
+import org.kohsuke.github.GHIssueComment;
+import org.kohsuke.github.GHOrganization;
+import org.kohsuke.github.GHPullRequest;
+import org.kohsuke.github.GHUser;
+import org.kohsuke.github.GitHub;
+import org.kohsuke.github.PagedIterable;
 import org.kohsuke.stapler.DataBoundConstructor;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -66,6 +72,7 @@ public class GitHubPRUserRestriction implements Describable<GitHubPRUserRestrict
      * Checks that user is allowed to control
      *
      * @param user commented user
+     *
      * @return true if user/org whitelisted
      */
     public boolean isWhitelisted(GHUser user) {
@@ -109,19 +116,42 @@ public class GitHubPRUserRestriction implements Describable<GitHubPRUserRestrict
 
     private boolean isMyselfUser(GHUser user) {
         boolean ret = false;
+        
+        if(user == null) {
+            return false;
+        }
+        
         try {
-            ret = user != null && user.getLogin().equals(getGitHub().getMyself().getLogin());
+            GitHub github = GitHubPRTrigger.DescriptorImpl.githubFor(URI.create(user.getHtmlUrl().toString()));
+            ret = StringUtils.equals(user.getLogin(), github.getMyself().getLogin());
         } catch (IOException e) {
             LOGGER.error("Can't connect retrieve user data from GitHub", e);
         }
         return ret;
     }
 
+    public boolean isUserMemberOfOrganization(String organisation, GHUser member) {
+        boolean orgHasMember = false;
+        try {
+            //TODO check for null member
+            GitHub github = GitHubPRTrigger.DescriptorImpl.githubFor(URI.create(member.getHtmlUrl().toString()));
+            orgHasMember = github.getOrganization(organisation).hasMember(member);
+            LOGGER.debug("org.hasMember(member)? user:'{}' org: '{}' == '{}'",
+                    member.getLogin(), organisation, orgHasMember ? "yes" : "no");
+
+        } catch (IOException ex) {
+            LOGGER.error("Can't get organization data", ex);
+        }
+        return orgHasMember;
+    }
+
     private boolean isInWhitelistedOrg(GHUser user) {
         boolean ret = false;
         for (String organisation : orgsSet) {
             try {
-                GHOrganization ghOrganization = getGitHub().getOrganization(organisation);
+                //TODO check for null user
+                GitHub github = GitHubPRTrigger.DescriptorImpl.githubFor(URI.create(user.getHtmlUrl().toString()));
+                GHOrganization ghOrganization = github.getOrganization(organisation);
                 ret = ghOrganization.hasMember(user);
                 if (ret) {
                     break;
@@ -133,11 +163,6 @@ public class GitHubPRUserRestriction implements Describable<GitHubPRUserRestrict
         return ret;
     }
 
-    private GitHub getGitHub() throws IOException {
-        GitHubPRTrigger.DescriptorImpl descriptor = (GitHubPRTrigger.DescriptorImpl) Jenkins.getInstance().getDescriptor(GitHubPRTrigger.class);
-        return descriptor.getGitHub();
-    }
-
     public Descriptor<GitHubPRUserRestriction> getDescriptor() {
         return (DescriptorImpl) Jenkins.getInstance().getDescriptor(GitHubPRUserRestriction.class);
     }
@@ -146,8 +171,7 @@ public class GitHubPRUserRestriction implements Describable<GitHubPRUserRestrict
     public static class DescriptorImpl extends Descriptor<GitHubPRUserRestriction> {
 
         public String getWhitelistUserMsg() {
-            GitHubPRTrigger.DescriptorImpl descriptor = (GitHubPRTrigger.DescriptorImpl) Jenkins.getInstance().getDescriptor(GitHubPRTrigger.class);
-            return descriptor.getWhitelistUserMsg();
+            return GitHubPRTrigger.DescriptorImpl.get().getWhitelistUserMsg();
         }
 
         @Override

@@ -2,57 +2,72 @@ package org.jenkinsci.plugins.github.pullrequest;
 
 import antlr.ANTLRException;
 import com.cloudbees.jenkins.GitHubRepositoryName;
+import com.cloudbees.jenkins.GitHubWebHook;
 import com.coravy.hudson.plugins.github.GithubProjectProperty;
-import com.squareup.okhttp.Cache;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.OkUrlFactory;
+import com.google.common.base.Optional;
 import hudson.Extension;
 import hudson.Util;
-import hudson.model.*;
-import hudson.model.queue.QueueTaskFuture;
+import hudson.model.AbstractProject;
+import hudson.model.Action;
+import hudson.model.Item;
 import hudson.triggers.Trigger;
 import hudson.triggers.TriggerDescriptor;
-import hudson.util.FormValidation;
 import hudson.util.SequentialExecutionQueue;
-import hudson.util.StreamTaskListener;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
-import org.apache.commons.lang3.Validate;
-import org.jenkinsci.plugins.github.config.GitHubServerConfig;
+import org.jenkinsci.plugins.github.GitHubPlugin;
+import org.jenkinsci.plugins.github.internal.GHPluginConfigException;
 import org.jenkinsci.plugins.github.pullrequest.events.GitHubPREvent;
 import org.jenkinsci.plugins.github.pullrequest.events.GitHubPREventDescriptor;
 import org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRBranchRestriction;
 import org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRUserRestriction;
-import org.kohsuke.github.*;
+import org.jenkinsci.plugins.github.pullrequest.trigger.JobRunnerForCause;
+import org.jenkinsci.plugins.github.pullrequest.utils.LoggingTaskListenerWrapper;
+import org.kohsuke.github.GHIssueState;
+import org.kohsuke.github.GHPullRequest;
+import org.kohsuke.github.GHRateLimit;
+import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GitHub;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
-import java.io.File;
-import java.io.FileNotFoundException;
+import javax.annotation.Nullable;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.net.Proxy;
-import java.text.DateFormat;
-import java.util.ArrayList;
+import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
+import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.Arrays.asList;
+import static com.google.common.base.Predicates.and;
+import static com.google.common.base.Predicates.in;
+import static com.google.common.base.Predicates.not;
+import static com.google.common.base.Predicates.notNull;
+import static java.text.DateFormat.getDateTimeInstance;
 import static org.apache.commons.lang.StringUtils.isBlank;
-import static org.apache.commons.lang.StringUtils.isNotEmpty;
-import static org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger.DescriptorImpl.getJenkinsInstance;
-import static org.jenkinsci.plugins.github.pullrequest.GitHubPRTriggerMode.*;
-import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.*;
+import static org.apache.commons.lang.StringUtils.isNotBlank;
+import static org.jenkinsci.plugins.github.config.GitHubServerConfig.withHost;
+import static org.jenkinsci.plugins.github.pullrequest.GitHubPRTriggerMode.CRON;
+import static org.jenkinsci.plugins.github.pullrequest.GitHubPRTriggerMode.HEAVY_HOOKS;
+import static org.jenkinsci.plugins.github.pullrequest.trigger.check.BranchRestrictionFilter.withBranchRestriction;
+import static org.jenkinsci.plugins.github.pullrequest.trigger.check.LocalRepoUpdater.updateLocalRepo;
+import static org.jenkinsci.plugins.github.pullrequest.trigger.check.NotUpdatedPRFilter.notUpdated;
+import static org.jenkinsci.plugins.github.pullrequest.trigger.check.PullRequestToCauseConverter.toGitHubPRCause;
+import static org.jenkinsci.plugins.github.pullrequest.trigger.check.SkipFirstRunForPRFilter.ifSkippedFirstRun;
+import static org.jenkinsci.plugins.github.pullrequest.trigger.check.UserRestrictionFilter.withUserRestriction;
+import static org.jenkinsci.plugins.github.pullrequest.trigger.check.UserRestrictionPopulator.prepareUserRestrictionFilter;
+import static org.jenkinsci.plugins.github.pullrequest.utils.PRHelperFunctions.extractPRNumber;
+import static org.jenkinsci.plugins.github.pullrequest.utils.PRHelperFunctions.fetchRemotePR;
+import static org.jenkinsci.plugins.github.util.FluentIterableWrapper.from;
+import static org.jenkinsci.plugins.github.util.JobInfoHelpers.isBuildable;
 
 /**
  * GitHub Pull Request trigger.
@@ -76,7 +91,6 @@ import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.*;
  */
 public class GitHubPRTrigger extends Trigger<AbstractProject<?, ?>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(GitHubPRTrigger.class);
-    private static final Cause NO_CAUSE = null;
 
     @CheckForNull
     private GitHubPRTriggerMode triggerMode = CRON;
@@ -134,435 +148,6 @@ public class GitHubPRTrigger extends Trigger<AbstractProject<?, ?>> {
         this.branchRestriction = branchRestriction;
     }
 
-    @Override
-    public void start(AbstractProject<?, ?> project, boolean newInstance) {
-        LOGGER.info("Starting GitHub Pull Request trigger for project {}", project.getName());
-        super.start(project, newInstance);
-
-        if (getTriggerMode() != CRON) {
-            //TODO implement
-            return;
-        }
-
-    }
-
-    // there race conditions when job is null but trigger exists
-    public String getRepoFullName() {
-        return getRepoFullName(job);
-    }
-
-    public String getRepoFullName(AbstractProject<?, ?> job) {
-        if (isBlank(repoFullName)) {
-            
-            checkNotNull(job, "job object is null, race condition?");
-            GithubProjectProperty ghpp = job.getProperty(GithubProjectProperty.class);
-
-            checkNotNull(ghpp, "GitHub project property is not defined. Can't setup GitHub PR trigger for job %s", job.getName());
-            checkNotNull(ghpp.getProjectUrl(), "A GitHub project url is required");
-
-            GitHubRepositoryName repo = GitHubRepositoryName.create(ghpp.getProjectUrl().baseUrl());
-
-            checkNotNull(repo, "Invalid GitHub project url: %s", ghpp.getProjectUrl().baseUrl());
-
-            repoFullName = String.format("%s/%s", repo.getUserName(), repo.getRepositoryName());
-        }
-
-        return repoFullName;
-    }
-
-    @Override
-    public void run() {
-        if (getTriggerMode() != null && getTriggerMode() == CRON) {
-            doRun(null);
-        }
-    }
-
-    /**
-     * For running from external places. Goes to queue.
-     */
-    public void queueRun(AbstractProject<?, ?> job, final int prNumber) {
-        this.job = job;
-        getDescriptor().queue.execute(new Runnable() {
-            @Override
-            public void run() {
-                doRun(prNumber);
-            }
-        });
-    }
-
-    /**
-     * Runs check
-     * @param prNumber - PR number for check, if null - then all RPs
-     */
-    public void doRun(Integer prNumber) {
-        if (job == null || job.isDisabled()) {
-            LOGGER.debug("Job {} is disabled, but trigger run!", job == null ? "no job" : job.getFullName());
-            return;
-        }
-
-        if (!(getTriggerMode() == CRON || getTriggerMode() == HEAVY_HOOKS)) {
-            LOGGER.warn("Trigger mode {} is not supported yet ({})", getTriggerMode(), job.getFullName());
-            return;
-        }
-
-        GitHubPRRepository localRepository = job.getAction(GitHubPRRepository.class);
-        if (localRepository == null) {
-            LOGGER.warn("Can't get repository info, maybe project {} misconfigured?", job.getFullName());
-            return;
-        }
-
-        long startTime = System.currentTimeMillis();
-
-        List<GitHubPRCause> causes = Collections.emptyList();
-
-        try (StreamTaskListener listener = new StreamTaskListener(getPollingLogAction().getLogFile())) {
-            final PrintStream logger = listener.getLogger();
-            logger.println("Started on " + DateFormat.getDateTimeInstance().format(new Date()));
-            LOGGER.debug("Running GitHub Pull Request trigger check.");
-
-            try {
-                causes = check(localRepository, listener, prNumber);
-            } catch (IOException e) {
-                listener.error("Can't save repository state, because " + e.getMessage());
-                LOGGER.error("Can't save repository state, because: '{}'", e.getMessage());
-            }
-
-            try {
-                localRepository.save();
-            } catch (IOException e) {
-                listener.error("Can't save repository state, because " + e.getMessage());
-                LOGGER.error("Can't save repository state, because: '{}'", e.getMessage());
-            }
-
-            long duration = System.currentTimeMillis() - startTime;
-            LOGGER.info("End  GitHub Pull Request trigger check. Summary time: {}ms", duration);
-            logger.println("Finished at " + DateFormat.getDateTimeInstance().format(new Date())
-                    + ", duration " + duration + "ms");
-        } catch (Throwable e) {
-            LOGGER.error("can't trigger build {}", e.getMessage());
-            return;
-        }
-
-        for (GitHubPRCause cause : causes) {
-            try {
-                cause.setPollingLog(pollingLogAction.getLogFile());
-                build(cause);
-            } catch (IOException e) {
-                LOGGER.error("can't trigger build {}", e.getMessage(), e);
-            }
-        }
-    }
-
-    @CheckForNull
-    public GitHubPRPollingLogAction getPollingLogAction() {
-        if (pollingLogAction == null && job != null) {
-            pollingLogAction = new GitHubPRPollingLogAction(job);
-        }
-
-        return pollingLogAction;
-    }
-
-    @Override
-    public Collection<? extends Action> getProjectActions() {
-        if (getPollingLogAction() == null) {
-            return Collections.emptyList();
-        }
-        return Collections.singleton(getPollingLogAction());
-    }
-
-    /**
-     * replace with {@link com.cloudbees.jenkins.GitHubRepositoryName} ?
-     */
-
-    /**
-     * runs check of local (last) Repository state (list of PRs) vs current remote state
-     * - local state store only last open PRs
-     * - if last open PR <-> now closed -> should trigger only when ClosePREvent exist
-     * - last open PR <-> now changed -> trigger only
-     * - special comment in PR -> trigger
-     */
-    public List<GitHubPRCause> check(GitHubPRRepository localRepository, TaskListener listener, Integer prNumber)
-            throws IOException {
-        final PrintStream logger = listener.getLogger();
-
-        GHRateLimit rateLimitBefore = getGitHub().getRateLimit();
-        LOGGER.debug("GitHub rate limit before check: {}", rateLimitBefore);
-        logger.println("GitHub rate limit before check: " + rateLimitBefore);
-        int checkedPR = 0;
-
-        final ArrayList<GitHubPRCause> gitHubPRCauses = new ArrayList<>();
-
-        // get local and remote list of PRs
-        Map<Integer, GitHubPRPullRequest> localPulls = localRepository.getPulls();
-        String repoFullName1 = getRepoFullName();
-        GHRepository ghRepository = getGitHub().getRepository(repoFullName1);
-
-        List<GHPullRequest> remotePulls = new ArrayList<>();
-        if (prNumber == null) {
-            remotePulls = ghRepository.getPullRequests(GHIssueState.OPEN);
-            // add PRs that was closed on remote
-            for (Map.Entry<Integer, GitHubPRPullRequest> localPr : localPulls.entrySet()) {
-                boolean contains = false;
-
-                for (GHPullRequest remotePR : remotePulls) {
-                    if (remotePR.getNumber() == localPr.getKey()) {
-                        contains = true;
-                        break;
-                    }
-                }
-
-                if (!contains) {
-                    remotePulls.add(ghRepository.getPullRequest(localPr.getKey()));
-                }
-            }
-        } else {
-            remotePulls.add(ghRepository.getPullRequest(prNumber));
-        }
-
-        for (GHPullRequest remotePR : remotePulls) {
-            checkedPR++;
-
-//            //prefetch
-//            remotePR.getLabels();
-//            remotePR.getMergedBy();
-
-            //null if local not existed before
-            @CheckForNull GitHubPRPullRequest localPR = localPulls.get(remotePR.getNumber());
-
-            if (!isUpdated(remotePR, localPR)) { // light check
-                LOGGER.debug("PR #{} '{}' not changed", remotePR.getNumber(), remotePR.getTitle());
-                logger.println("PR #" + remotePR.getNumber() + " '" + remotePR.getTitle() + "' not changed");
-                continue;
-            }
-
-            switch (remotePR.getState()) {
-                case OPEN:
-                    localPulls.put(remotePR.getNumber(), new GitHubPRPullRequest(remotePR));
-                    break;
-                case CLOSED:
-                    localPulls.remove(remotePR.getNumber()); // don't store
-                    break;
-            }
-
-            if (userRestriction != null) {
-                userRestriction.populate(remotePR, localPR, this);
-            }
-
-            if (skipFirstRun) {
-                LOGGER.info("Skipping first run for {} and PR #{}",
-                        job.getFullName(), remotePR.getNumber());
-                logger.println("Skipping first run for " + job.getFullName() + " and PR #" + remotePR.getNumber());
-                continue;
-            }
-
-            if (branchRestriction != null && branchRestriction.isBranchBuildAllowed(remotePR)) {
-                LOGGER.warn("Skipping #{} {} because of branch restriction",
-                        remotePR.getNumber(), remotePR.getTitle());
-                logger.println("Skipping #" + remotePR.getNumber() + " " + remotePR.getTitle() + " because of branch restriction");
-                continue;
-            }
-
-            if (userRestriction != null && !userRestriction.isWhitelisted(remotePR.getUser())) {
-                LOGGER.warn("Skipping #{} {} because of user restriction (user - {})",
-                        remotePR.getNumber(), remotePR.getTitle(), remotePR.getUser());
-                logger.println("Skipping #" + remotePR.getNumber() + " " + remotePR.getTitle()
-                        + " because of user restriction (user - " + remotePR.getUser() + ")");
-                continue;
-            }
-
-            for (GitHubPREvent event : getEvents()) {  // waterfall, first matched win
-                try {
-                    GitHubPRCause cause = event.check(this, remotePR, localPR, listener);
-                    if (cause != null) {
-                        if (cause.isSkip()) {
-                            LOGGER.debug("Skipping PR #{}", remotePR.getNumber());
-                            logger.println("Skipping PR #" + remotePR.getNumber());
-                            break;
-                        } else {
-                            LOGGER.debug("Triggering build for PR #'{}', because {}",
-                                    remotePR.getNumber(), cause.getReason());
-                            logger.println("Triggering build for PR #" + remotePR.getNumber() + " because " + cause.getReason());
-                            gitHubPRCauses.add(cause);
-                            // don't check other events
-                            break;
-                        }
-                    }
-                } catch (IOException e) {
-                    LOGGER.warn("Can't check trigger event", e);
-                    listener.error("Skip event failed, so skipping PR");
-                    break;
-                }
-
-            }
-        }
-
-        if (skipFirstRun) {
-            LOGGER.info("Skipping first run for {}", job.getFullName());
-            skipFirstRun = false;
-            trySave(); //TODO or better fail with IOException?
-        }
-
-        GHRateLimit rateLimitAfter = getGitHub().getRateLimit();
-        int consumed = rateLimitBefore.remaining - rateLimitAfter.remaining;
-        LOGGER.info("GitHub rate limit after check: {}, consumed: {}, checked PRs: {}",
-                rateLimitAfter, consumed, checkedPR);
-        return gitHubPRCauses;
-    }
-
-    /**
-     * lightweight check that comments and time were changed
-     */
-    public boolean isUpdated(GHPullRequest pr, GitHubPRPullRequest localPR) throws IOException {
-        if (localPR == null) {
-            return true; // we don't know yet
-        }
-
-        boolean prUpd = localPR.getPrUpdatedAt().compareTo(pr.getUpdatedAt()) < 0; // by time
-        boolean issueUpd = localPR.getIssueUpdatedAt().compareTo(pr.getIssueUpdatedAt()) < 0;
-        boolean headUpd = !localPR.getHeadSha().equals(pr.getHead().getSha()); // or head?
-        boolean updated = prUpd || issueUpd || headUpd;
-
-        if (updated) {
-            LOGGER.info("Pull request #{} was updated at: {} by {}",
-                    localPR.getNumber(), localPR.getPrUpdatedAt(), localPR.getUserLogin());
-        }
-
-        return updated;
-    }
-
-    public void build(@Nonnull GitHubPRCause cause) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Run queued");
-
-        if (cancelQueued && cancelQueuedBuildByPrNumber(cause.getNumber())) {
-            sb.append("Queued builds aborted.");
-        }
-
-        QueueTaskFuture<?> queueTaskFuture = startJob(cause);
-        if (queueTaskFuture == null) {
-            LOGGER.error("Job didn't start");
-        }
-
-        LOGGER.info(sb.toString());
-
-        GitHub connection = getGitHub();    // remote connection
-        if (connection != null && preStatus) {
-            GHRepository repository = connection.getRepository(repoFullName);
-            repository.createCommitStatus(cause.getHeadSha(),
-                    GHCommitState.PENDING,
-                    null,
-                    sb.toString(),
-                    job.getFullName());
-        }
-
-    }
-
-    /**
-     * Cancel previous builds for specified PR id.
-     */
-    private boolean cancelQueuedBuildByPrNumber(int id) {
-        Queue queue = getJenkinsInstance().getQueue();
-        List<Queue.Item> approximateItemsQuickly = queue.getApproximateItemsQuickly();
-
-        for (Queue.Item item : approximateItemsQuickly) {
-            List<? extends Action> allActions = item.getAllActions();
-            for (Action action : allActions) {
-                if (action instanceof CauseAction) {
-                    CauseAction causeAction = (CauseAction) action;
-                    for (Cause cause : causeAction.getCauses()) {
-                        if (cause instanceof GitHubPRCause) {
-                            GitHubPRCause gitHubPRCause = (GitHubPRCause) cause;
-                            if (gitHubPRCause.getNumber() == id) {
-                                queue.cancel(item);
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    @Override
-    public void stop() {
-        //TODO clean hooks?
-        if (job != null) {
-            LOGGER.info("Stopping the GitHub PR trigger for project {}", job.getFullName());
-        }
-        super.stop();
-    }
-
-    private QueueTaskFuture<?> startJob(GitHubPRCause cause) {
-        List<ParameterValue> values = getDefaultParametersValues();
-        values.addAll(asList(
-                TRIGGER_SENDER_AUTHOR.param(cause.getTriggerSenderName()),
-                TRIGGER_SENDER_EMAIL.param(cause.getTriggerSenderEmail()),
-                COMMIT_AUTHOR_NAME.param(cause.getCommitAuthorName()),
-                COMMIT_AUTHOR_EMAIL.param(cause.getCommitAuthorEmail()),
-                TARGET_BRANCH.param(cause.getTargetBranch()),
-                SOURCE_BRANCH.param(cause.getSourceBranch()),
-                AUTHOR_EMAIL.param(cause.getPRAuthorEmail()),
-                SHORT_DESC.param(cause.getShortDescription()),
-                TITLE.param(cause.getTitle()),
-                URL.param(cause.getHtmlUrl().toString()),
-                SOURCE_REPO_OWNER.param(cause.getSourceRepoOwner()),
-                HEAD_SHA.param(cause.getHeadSha()),
-                COND_REF.param(cause.getCondRef()),
-                CAUSE_SKIP.param(cause.isSkip()),
-                NUMBER.param(String.valueOf(cause.getNumber()))
-        ));
-
-        return this.job.scheduleBuild2(job.getQuietPeriod(), NO_CAUSE,
-                asList(new CauseAction(cause), new ParametersAction(values)));
-    }
-
-//    /**
-//     * Find the previous BuildData for the given pull request number; this may return null
-//     */
-//    private @CheckForNull BuildData findPreviousBuildByPRNumber(StringParameterValue prNumber) {
-//        // find the previous build for this particular pull request, it may not be the last build
-//        for (Run<?, ?> r : job.getBuilds()) {
-//            ParametersAction pa = r.getAction(ParametersAction.class);
-//            if (pa != null) {
-//                for (ParameterValue pv : pa.getParameters()) {
-//                    if (pv.equals(prNumber)) {
-//                        return r.getAction(BuildData.class);
-//                    }
-//                }
-//            }
-//        }
-//        return null;
-//    }
-
-    /**
-     * @see jenkins.model.ParameterizedJobMixIn#getDefaultParametersValues()
-     */
-    private List<ParameterValue> getDefaultParametersValues() {
-        ParametersDefinitionProperty paramDefProp = job.getProperty(ParametersDefinitionProperty.class);
-        List<ParameterValue> defValues = new ArrayList<>();
-
-        /*
-         * This check is made ONLY if someone will call this method even if isParametrized() is false.
-         */
-        if (paramDefProp == null) {
-            return defValues;
-        }
-
-        /* Scan for all parameter with an associated default values */
-        for (ParameterDefinition paramDefinition : paramDefProp.getParameterDefinitions()) {
-            ParameterValue defaultValue = paramDefinition.getDefaultParameterValue();
-
-            if (defaultValue != null) {
-                defValues.add(defaultValue);
-            }
-        }
-
-        return defValues;
-    }
-
-
     public boolean isPreStatus() {
         return preStatus;
     }
@@ -583,49 +168,6 @@ public class GitHubPRTrigger extends Trigger<AbstractProject<?, ?>> {
         return events;
     }
 
-    /**
-     * @deprecated introduced transient factory that should provide, but let's wrap here call ??
-     */
-    public GitHubPRRepository getLocalRepository(String repoFullName) throws IOException {
-        return job.getAction(GitHubPRRepository.class);
-    }
-
-    public GHRepository getRemoteRepo() throws IOException {
-        if (remoteRepository == null) {
-            remoteRepository = getGitHub().getRepository(getRepoFullName());
-        }
-        return remoteRepository;
-    }
-
-    public GitHub getGitHub() throws IOException {
-        GitHub gh;
-        try {
-            gh = getDescriptor().getGitHub();
-        } catch (FileNotFoundException ex) {
-            LOGGER.info("Can't connect to GitHub {}. Bad Global plugin configuration.", ex.getMessage());
-            throw new IOException("Can't connect to GitHub: " + ex.getMessage() + ". Bad Global plugin configuration.", ex);
-        } catch (IOException ex) {
-            LOGGER.error("Can't connect to GitHub {}. Bad Global plugin configuration.", ex.getMessage());
-            throw ex;
-        } catch (Throwable t) {
-            LOGGER.debug("Can't connect to GitHub {}. Bad Global plugin configuration.", t.getMessage());
-            throw new IOException("Can't connect to GitHub: " + t.getMessage() + ". Bad Global plugin configuration.", t);
-        }
-
-        if (gh == null) {
-            throw new IOException("Can't connect to GitHub");
-        }
-
-        return gh;
-    }
-
-    public void trySave() {
-        try {
-            job.save();
-        } catch (IOException e) {
-            LOGGER.error("Error while saving job to file", e);
-        }
-    }
 
     public GitHubPRUserRestriction getUserRestriction() {
         return userRestriction;
@@ -636,29 +178,241 @@ public class GitHubPRTrigger extends Trigger<AbstractProject<?, ?>> {
     }
 
     @Override
+    public void start(AbstractProject<?, ?> project, boolean newInstance) {
+        LOGGER.info("Starting GitHub Pull Request trigger for project {}", project.getName());
+        super.start(project, newInstance);
+
+        if (newInstance && GitHubPlugin.configuration().isManageHooks() && HEAVY_HOOKS == getTriggerMode()) {
+            GitHubWebHook.get().registerHookFor(project);
+        }
+    }
+
+    @Override
+    public void run() {
+        if (CRON == getTriggerMode()) {
+            doRun(null);
+        }
+    }
+
+    @Override
+    public void stop() {
+        //TODO clean hooks?
+        if (job != null) {
+            LOGGER.info("Stopping the GitHub PR trigger for project {}", job.getFullName());
+        }
+        super.stop();
+    }
+
+    @CheckForNull
+    public GitHubPRPollingLogAction getPollingLogAction() {
+        if (pollingLogAction == null && job != null) {
+            pollingLogAction = new GitHubPRPollingLogAction(job);
+        }
+
+        return pollingLogAction;
+    }
+
+    @Override
+    public Collection<? extends Action> getProjectActions() {
+        if (getPollingLogAction() == null) {
+            return Collections.emptyList();
+        }
+        return Collections.singleton(getPollingLogAction());
+    }
+
+    @Override
     public DescriptorImpl getDescriptor() {
         return (DescriptorImpl) super.getDescriptor();
     }
 
+    /**
+     * For running from external places. Goes to queue.
+     */
+    public void queueRun(AbstractProject<?, ?> job, final int prNumber) {
+        this.job = job;
+        getDescriptor().queue.execute(new Runnable() {
+            @Override
+            public void run() {
+                doRun(prNumber);
+            }
+        });
+    }
+
+    public String getRepoFullName(AbstractProject<?, ?> job) {
+        if (isBlank(repoFullName)) {
+
+            checkNotNull(job, "job object is null, race condition?");
+            GithubProjectProperty ghpp = job.getProperty(GithubProjectProperty.class);
+
+            checkNotNull(ghpp, "GitHub project property is not defined. Can't setup GitHub PR trigger for job %s", job.getName());
+            checkNotNull(ghpp.getProjectUrl(), "A GitHub project url is required");
+
+            GitHubRepositoryName repo = GitHubRepositoryName.create(ghpp.getProjectUrl().baseUrl());
+
+            checkNotNull(repo, "Invalid GitHub project url: %s", ghpp.getProjectUrl().baseUrl());
+
+            repoFullName = String.format("%s/%s", repo.getUserName(), repo.getRepositoryName());
+        }
+
+        return repoFullName;
+    }
+
+    public GHRepository getRemoteRepo() throws IOException {
+        if (remoteRepository == null) {
+            String repo = getRepoFullName(job);
+            GithubProjectProperty ghpp = job.getProperty(GithubProjectProperty.class);
+
+            remoteRepository = DescriptorImpl.githubFor(URI.create(ghpp.getProjectUrl().baseUrl()))
+                    .getRepository(repo);
+        }
+        return remoteRepository;
+    }
+
+    public void trySave() {
+        try {
+            job.save();
+        } catch (IOException e) {
+            LOGGER.error("Error while saving job to file", e);
+        }
+    }
+
+    /**
+     * Runs check
+     *
+     * @param prNumber - PR number for check, if null - then all PRs
+     */
+    private void doRun(Integer prNumber) {
+        if (not(isBuildable()).apply(job)) {
+            LOGGER.debug("Job {} is disabled, but trigger run!", job == null ? "<no job>" : job.getFullName());
+            return;
+        }
+
+        if (!isSupportedTriggerMode(getTriggerMode())) {
+            LOGGER.warn("Trigger mode {} is not supported yet ({})", getTriggerMode(), job.getFullName());
+            return;
+        }
+
+        GitHubPRRepository localRepository = job.getAction(GitHubPRRepository.class);
+        if (localRepository == null) {
+            LOGGER.warn("Can't get repository info, maybe project {} misconfigured?", job.getFullName());
+            return;
+        }
+
+        List<GitHubPRCause> causes;
+
+        try (LoggingTaskListenerWrapper listener =
+                     new LoggingTaskListenerWrapper(LOGGER, getPollingLogAction().getLogFile(), UTF_8)) {
+            long startTime = System.currentTimeMillis();
+            listener.debug("Running GitHub Pull Request trigger check for {} on {}",
+                    getDateTimeInstance().format(new Date(startTime)), localRepository.getFullName());
+
+            causes = readyToBuildCauses(localRepository, listener, prNumber);
+
+            localRepository.saveQuetly();
+
+            long duration = System.currentTimeMillis() - startTime;
+            listener.info("Finished GitHub Pull Request trigger check for {} at {}. Duration: {}ms",
+                    localRepository.getFullName(), getDateTimeInstance().format(new Date()), duration);
+        } catch (Exception e) {
+            LOGGER.error("Can't process check ({})", e.getMessage(), e);
+            return;
+        }
+
+        from(causes).filter(new JobRunnerForCause(job, this)).toSet();
+    }
+
+    /**
+     * runs check of local (last) Repository state (list of PRs) vs current remote state
+     * - local state store only last open PRs
+     * - if last open PR <-> now closed -> should trigger only when ClosePREvent exist
+     * - last open PR <-> now changed -> trigger only
+     * - special comment in PR -> trigger
+     *
+     * @param localRepository persisted data to compare with remote state
+     * @param listener logger to write to console and to polling log
+     * @param prNumber pull request number to fetch only required num. Can be null
+     *
+     * @return causes which ready to be converted to job-starts. One cause per repo.
+     */
+    private List<GitHubPRCause> readyToBuildCauses(GitHubPRRepository localRepository,
+                                                   LoggingTaskListenerWrapper listener,
+                                                   @Nullable Integer prNumber) {
+        try {
+            GitHub github = DescriptorImpl.githubFor(URI.create(localRepository.getGithubUrl()));
+            GHRateLimit rateLimitBefore = github.getRateLimit();
+            listener.debug("GitHub rate limit before check: {}", rateLimitBefore);
+
+            // get local and remote list of PRs
+            GHRepository remoteRepository = github.getRepository(getRepoFullName(job));
+            Set<GHPullRequest> remotePulls = pullRequestsToCheck(prNumber, remoteRepository, localRepository);
+            
+            Set<GHPullRequest> prepeared = from(remotePulls)
+                    .filter(notUpdated(localRepository, listener))
+                    .transform(prepareUserRestrictionFilter(localRepository, this)).toSet();
+
+            List<GitHubPRCause> causes = from(prepeared)
+                    .filter(and(
+                            ifSkippedFirstRun(listener, skipFirstRun),
+                            withBranchRestriction(listener, branchRestriction),
+                            withUserRestriction(listener, userRestriction)
+                    ))
+                    .transform(toGitHubPRCause(localRepository, listener, this))
+                    .filter(notNull()).toList();
+            
+            LOGGER.trace("Causes count for {}: {}", localRepository.getFullName(), causes.size());
+            from(prepeared).transform(updateLocalRepo(localRepository)).toSet();
+
+            saveIfSkipFirstRun();
+
+            GHRateLimit rateLimitAfter = github.getRateLimit();
+            int consumed = rateLimitBefore.remaining - rateLimitAfter.remaining;
+            LOGGER.info("GitHub rate limit after check {}: {}, consumed: {}, checked PRs: {}",
+                    localRepository.getFullName(), rateLimitAfter, consumed, remotePulls.size());
+
+            return causes;
+        } catch (IOException e) {
+            listener.error("Can't get build causes, because: '{}'", e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    private void saveIfSkipFirstRun() {
+        if (skipFirstRun) {
+            LOGGER.info("Skipping first run for {}", job.getFullName());
+            skipFirstRun = false;
+            trySave();
+        }
+    }
+
+    private static boolean isSupportedTriggerMode(GitHubPRTriggerMode mode) {
+        return mode == CRON || mode == HEAVY_HOOKS;
+    }
+
+    private static Set<GHPullRequest> pullRequestsToCheck(@Nullable Integer prNumber,
+                                                          GHRepository remoteRepo,
+                                                          GitHubPRRepository localRepo) throws IOException {
+        if (prNumber != null) {
+            return Collections.singleton(remoteRepo.getPullRequest(prNumber));
+        } else {
+            List<GHPullRequest> remotePulls = remoteRepo.getPullRequests(GHIssueState.OPEN);
+
+            Set<Integer> remotePRNums = from(remotePulls).transform(extractPRNumber()).toSet();
+
+            return from(localRepo.getPulls().keySet())
+                    // add PRs that was closed on remote
+                    .filter(not(in(remotePRNums)))
+                    .transform(fetchRemotePR(remoteRepo)).filter(notNull()).append(remotePulls).toSet();
+        }
+    }
+
     @Extension
     public static class DescriptorImpl extends TriggerDescriptor {
-        private static final Logger LOGGER = LoggerFactory.getLogger(DescriptorImpl.class);
-
         private final transient SequentialExecutionQueue queue = new SequentialExecutionQueue(Jenkins.MasterComputer.threadPoolForRemoting);
 
-        private String apiUrl = "https://api.github.com";
         private String whitelistUserMsg = ".*add\\W+to\\W+whitelist.*";
         private String spec = "H/5 * * * *";
 
-        private String username;
-        private String password;
-        private String accessToken;
         private String publishedURL;
-
-        private transient GitHub gh;
-        private int cacheSize = 20; // MB
-
-        private transient int oldHash = 0;
 
         public DescriptorImpl() {
             load();
@@ -677,138 +431,12 @@ public class GitHubPRTrigger extends Trigger<AbstractProject<?, ?>> {
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
 //            req.bindJSON(this, formData);
-            apiUrl = formData.getString("apiUrl");
-            username = formData.getString("username");
-            password = formData.getString("password");
-            accessToken = formData.getString("accessToken");
             publishedURL = formData.getString("publishedURL");
             whitelistUserMsg = formData.getString("whitelistUserMsg");
             spec = formData.getString("spec");
-            cacheSize = formData.getInt("cacheSize");
 
             save();
             return super.configure(req, formData);
-        }
-
-        public FormValidation doCheckApiUrl(@QueryParameter String value) {
-            return Jenkins.getInstance().getDescriptorByType(GitHubServerConfig.DescriptorImpl.class).doCheckApiUrl(value);
-        }
-
-        // create token for specified login/password
-        public FormValidation doCreateApiToken(@QueryParameter("username") final String username, @QueryParameter("password") final String password) {
-            try {
-                GitHub gh = new GitHubBuilder().withEndpoint(apiUrl).withPassword(username, password).build();
-                GHAuthorization token = gh.createToken(asList(GHAuthorization.REPO_STATUS, GHAuthorization.REPO), "Jenkins GitHub Pull Request Plugin", null);
-                return FormValidation.ok("Token created: " + token.getToken());
-            } catch (IOException ex) {
-                return FormValidation.error("Can't create GitHub token " + ex.getMessage());
-            }
-        }
-
-        private Proxy getProxy() {
-            Jenkins instance = getJenkinsInstance();
-
-            Proxy proxy;
-            if (instance.proxy == null) {
-                proxy = Proxy.NO_PROXY;
-            } else {
-                proxy = instance.proxy.createProxy(apiUrl);
-            }
-
-            return proxy;
-        }
-
-        private synchronized void connect() throws IOException {
-            Jenkins instance = getJenkinsInstance();
-
-            Validate.validState(isNotEmpty(apiUrl), "GitHub api url is not defined");
-            Validate.validState(isNotEmpty(accessToken), "Wrong argument accessToken");
-
-            Cache cache = new Cache(new File(instance.getRootDir(), GitHubPRTrigger.class.getName() + ".cache"), getCacheSize() * 1024 * 1024);
-            OkHttpConnector okHttpConnector = new OkHttpConnector(new OkUrlFactory(new OkHttpClient().setCache(cache).setProxy(getProxy())));
-
-            gh = new GitHubBuilder()
-                    .withEndpoint(apiUrl)
-                    .withRateLimitHandler(RateLimitHandler.FAIL)
-                    .withOAuthToken(accessToken)
-                    .withConnector(okHttpConnector)
-                    .build();
-
-            // don't allow to use connection with bad rate limit or token
-            GHRateLimit rateLimit = gh.getRateLimit();
-            if (rateLimit.remaining <= 60) {
-                gh = null;
-                LOGGER.warn(rateLimit.toString());
-                throw new IOException("Rate limit is lower then 60, set correct token: " + rateLimit);
-            }
-        }
-
-        //temp solution for killing connection
-        public boolean killConnection() {
-            boolean killed = false;
-
-            if (gh != null) {
-                gh = null;
-                killed = true;
-            }
-
-            return killed;
-        }
-
-        public GitHub getGitHub() throws IOException {
-            if (isConnectionChanged() || gh == null) {
-                LOGGER.debug("Opening GitHub connection...");
-                connect();
-            }
-            return gh;
-        }
-
-        public boolean isConnectionChanged() {
-            boolean changed = false;
-
-            int apiUrlHash = getApiUrl().hashCode();
-            int newHash = 31 * apiUrlHash ^ getCacheSize();
-
-            if (getAccessToken() != null) {
-                newHash = 31 * newHash ^ getAccessToken().hashCode();
-            }
-
-            if (oldHash != newHash) {
-                oldHash = newHash;
-                changed = true;
-                LOGGER.debug("Connection parameters changed");
-            }
-
-            return changed;
-        }
-
-        public boolean isUserMemberOfOrganization(String organisation, GHUser member) {
-            boolean orgHasMember = false;
-            try {
-                orgHasMember = getGitHub().getOrganization(organisation).hasMember(member);
-                LOGGER.debug("org.hasMember(member)? user:'{}' org: '{}' == '{}'",
-                        member.getLogin(), organisation, orgHasMember ? "yes" : "no");
-
-            } catch (IOException ex) {
-                LOGGER.error("Can't get organization data", ex);
-            }
-            return orgHasMember;
-        }
-
-        public String getUsername() {
-            return username;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public String getAccessToken() {
-            return accessToken;
-        }
-
-        public int getCacheSize() {
-            return cacheSize;
         }
 
         public String getPublishedURL() {
@@ -817,13 +445,13 @@ public class GitHubPRTrigger extends Trigger<AbstractProject<?, ?>> {
 
         public String getJenkinsURL() {
             String url = getPublishedURL();
-            if (url != null && !url.trim().equals("")) {
+            if (isNotBlank(url)) {
                 if (!url.endsWith("/")) {
                     url += "/";
                 }
                 return url;
             }
-            return getJenkinsInstance().getRootUrl();
+            return GitHubWebHook.getJenkinsInstance().getRootUrl();
         }
 
         public String getWhitelistUserMsg() {
@@ -834,26 +462,24 @@ public class GitHubPRTrigger extends Trigger<AbstractProject<?, ?>> {
             return spec;
         }
 
-        public String getApiUrl() {
-            return apiUrl;
-        }
-
         // list all available descriptors for choosing in job configuration
         public List<GitHubPREventDescriptor> getEventDescriptors() {
             return GitHubPREventDescriptor.all();
         }
 
+        @Nonnull
+        public static GitHub githubFor(URI uri) {
+            Optional<GitHub> client = from(GitHubPlugin.configuration()
+                    .findGithubConfig(withHost(uri.getHost()))).first();
+            if (client.isPresent()) {
+                return client.get();
+            } else {
+                throw new GHPluginConfigException("Can't find appropriate client for github repo <%s>", uri);
+            }
+        }
+
         public static DescriptorImpl get() {
             return Trigger.all().get(DescriptorImpl.class);
         }
-
-        public static Jenkins getJenkinsInstance() throws IllegalStateException {
-            Jenkins instance = Jenkins.getInstance();
-            if (instance == null) {
-                throw new IllegalStateException("Jenkins has not been started, or was already shut down");
-            }
-            return instance;
-        }
-
     }
 }

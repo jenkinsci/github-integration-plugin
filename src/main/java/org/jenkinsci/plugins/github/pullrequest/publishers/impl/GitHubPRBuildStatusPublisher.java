@@ -2,7 +2,12 @@ package org.jenkinsci.plugins.github.pullrequest.publishers.impl;
 
 import hudson.Extension;
 import hudson.Launcher;
-import hudson.model.*;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractDescribableImpl;
+import hudson.model.AbstractProject;
+import hudson.model.Api;
+import hudson.model.BuildListener;
+import hudson.model.Descriptor;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRCause;
@@ -13,11 +18,13 @@ import org.jenkinsci.plugins.github.pullrequest.utils.PublisherErrorHandler;
 import org.jenkinsci.plugins.github.pullrequest.utils.StatusVerifier;
 import org.kohsuke.github.GHCommitState;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 /**
  * Sets build status on GitHub.
@@ -36,7 +43,7 @@ public class GitHubPRBuildStatusPublisher extends GitHubPRAbstractPublisher {
     public GitHubPRBuildStatusPublisher(GitHubPRMessage statusMsg, GHCommitState unstableAs, BuildMessage buildMessage,
                                         StatusVerifier statusVerifier, PublisherErrorHandler errorHandler) {
         super(statusVerifier, errorHandler);
-        if (statusMsg != null && statusMsg.getContent() != null && !"".equals(statusMsg.getContent())) {
+        if (statusMsg != null && isNotEmpty(statusMsg.getContent())) {
             this.statusMsg = statusMsg;
         }
         this.unstableAs = unstableAs;
@@ -65,6 +72,7 @@ public class GitHubPRBuildStatusPublisher extends GitHubPRAbstractPublisher {
                     c.getHeadSha(), state, buildUrl, statusMsgValue);
 
             try {
+                // TODO check permissions to write human friendly message
                 build.getProject()
                         .getTrigger(GitHubPRTrigger.class)
                         .getRemoteRepo()
@@ -72,7 +80,7 @@ public class GitHubPRBuildStatusPublisher extends GitHubPRAbstractPublisher {
             } catch (IOException ex) {
                 if (buildMessage != null) {
                     String comment = null;
-                    LOGGER.error("Could not update commit status of the Pull Request on GitHub.", ex);
+                    LOGGER.error("Could not update commit status of the Pull Request on GitHub. ", ex);
                     if (state == GHCommitState.SUCCESS) {
                         comment = buildMessage.getSuccessMsg().expandAll(build, listener);
                     } else if (state == GHCommitState.FAILURE) {

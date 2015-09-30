@@ -8,7 +8,6 @@ import org.jenkinsci.plugins.github.pullrequest.GitHubPRPullRequest;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
 import org.jenkinsci.plugins.github.pullrequest.events.GitHubPREvent;
 import org.jenkinsci.plugins.github.pullrequest.events.GitHubPREventDescriptor;
-import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -16,6 +15,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.kohsuke.github.GHIssueState.CLOSED;
 
 /**
  * When PR opened or commits changed in it
@@ -33,7 +34,7 @@ public class GitHubPROpenEvent extends GitHubPREvent {
     @Override
     public GitHubPRCause check(GitHubPRTrigger gitHubPRTrigger, GHPullRequest remotePR,
                                @CheckForNull GitHubPRPullRequest localPR, TaskListener listener) throws IOException {
-        if (remotePR.getState().equals(GHIssueState.CLOSED)) {
+        if (remotePR.getState() == CLOSED) {
             return null; // already closed, nothing to check
         }
 
