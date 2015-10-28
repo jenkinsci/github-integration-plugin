@@ -3,10 +3,10 @@ package org.jenkinsci.plugins.github.pullrequest.trigger;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
-import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.Cause;
 import hudson.model.CauseAction;
+import hudson.model.Job;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
@@ -45,18 +45,18 @@ import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.TRIGGER_
 import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.TRIGGER_SENDER_EMAIL;
 import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.URL;
 import static org.jenkinsci.plugins.github.util.FluentIterableWrapper.from;
+import static org.jenkinsci.plugins.github.util.JobInfoHelpers.asParameterizedJobMixIn;
 
 /**
  * @author lanwen (Merkushev Kirill)
  */
 public class JobRunnerForCause implements Predicate<GitHubPRCause> {
     private static final Logger LOGGER = LoggerFactory.getLogger(JobRunnerForCause.class);
-    private static final Cause NO_CAUSE = null;
 
-    private AbstractProject<?, ?> job;
+    private Job<?, ?> job;
     private GitHubPRTrigger trigger;
 
-    public JobRunnerForCause(AbstractProject<?, ?> job, GitHubPRTrigger trigger) {
+    public JobRunnerForCause(Job<?, ?> job, GitHubPRTrigger trigger) {
         this.job = job;
         this.trigger = trigger;
     }
@@ -139,9 +139,8 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
                 CAUSE_SKIP.param(cause.isSkip()),
                 NUMBER.param(String.valueOf(cause.getNumber()))
         ));
-
-        return job.scheduleBuild2(job.getQuietPeriod(), NO_CAUSE,
-                asList(new CauseAction(cause), new ParametersAction(values)));
+        // no way to get quietPeriod, so temporary ignore it
+        return asParameterizedJobMixIn(job).scheduleBuild2(0, new CauseAction(cause), new ParametersAction(values));
     }
 
     /**
