@@ -90,6 +90,10 @@ public class GitHubPRPollingLogAction implements MatrixChildAction, RunAction2 {
         return new AnnotatedLargeText<>(getPollingLogFile(), Charset.defaultCharset(), true, this);
     }
 
+    public String getPollingFileName() {
+        return "github-pullrequest-polling.log";
+    }
+
     /**
      * Writes the annotated log to the given output.
      */

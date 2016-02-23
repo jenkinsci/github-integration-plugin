@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+
+    <parent>
+        <groupId>org.jenkins-ci.plugins</groupId>
+        <artifactId>github-integration-all-plugins</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+        <relativePath>../github-integration-all-plugins</relativePath>
+    </parent>
+
+    <artifactId>github-experimental</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <packaging>hpi</packaging>
+
+    <name>GitHub Integration Experimental Plugin</name>
+    <description>GitHub Integration Experimental Plugin for Jenkins</description>
+    <url>https://wiki.jenkins-ci.org/display/JENKINS/GitHub+Integration+Plugin</url>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>github-pullrequest</artifactId>
+            <version>0.1.0-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+    
+</project>

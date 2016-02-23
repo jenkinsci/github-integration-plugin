@@ -26,6 +26,8 @@
 
     <modules>
         <module>github-pullrequest-plugin</module>
+        <module>github-experimental-plugin</module>
+        <module>github-integration-all-plugins</module>
         <!-- JenkinsRule can't be used outside of HPI packaging scope, so temporary ITs in plugin src/test/ -->
         <!--<module>github-integration-its</module>-->
     </modules>
