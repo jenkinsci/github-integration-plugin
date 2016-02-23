@@ -45,6 +45,10 @@ public class GitHubPRPollingLogAction implements Action {
         return Util.loadFile(getLogFile());
     }
 
+    public String getPollingFileName() {
+        return "github-pullrequest-polling.log";
+    }
+
     /**
      * Writes the annotated log to the given output.
      *
@@ -55,6 +59,6 @@ public class GitHubPRPollingLogAction implements Action {
     }
 
     public File getLogFile() {
-        return new File(project.getRootDir(), "github-pullrequest-polling.log");
+        return new File(project.getRootDir(), getPollingFileName());
     }
 }
