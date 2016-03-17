@@ -1,13 +1,17 @@
 package org.jenkinsci.plugins.github.pullrequest.trigger.check;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+
 import hudson.model.TaskListener;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRCause;
+import org.jenkinsci.plugins.github.pullrequest.GitHubPRLabel;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRPullRequest;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRRepository;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
 import org.jenkinsci.plugins.github.pullrequest.events.GitHubPREvent;
 import org.jenkinsci.plugins.github.pullrequest.events.impl.GitHubPRCommitEvent;
+import org.jenkinsci.plugins.github.pullrequest.events.impl.GitHubPRLabelNotExistsEvent;
 import org.jenkinsci.plugins.github.pullrequest.events.impl.GitHubPROpenEvent;
 import org.jenkinsci.plugins.github.pullrequest.util.TaskListenerWrapperRule;
 import org.junit.Before;
@@ -16,6 +20,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.kohsuke.github.GHCommitPointer;
 import org.kohsuke.github.GHIssue;
+import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHUser;
@@ -24,15 +29,20 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.HashMap;
+import java.util.List;
 
+import static com.google.common.base.Predicates.notNull;
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.jenkinsci.plugins.github.pullrequest.trigger.check.PullRequestToCauseConverter.toGitHubPRCause;
+import static org.jenkinsci.plugins.github.util.FluentIterableWrapper.from;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -115,5 +125,36 @@ public class PullRequestToCauseConverterTest {
         assertThat("open cause", cause, notNullValue(GitHubPRCause.class));
         assertThat("reason in cause", cause.getReason(), containsString("open"));
         assertThat("pr num in cause", cause.getNumber(), is(2));
+    }
+
+    /**
+     * Test trigger configuration of:
+     *
+     *     1.) Skip PR if label is not present (when label is not present)
+     *     2.) Cause PR if commit changed (when commit has changed)
+     *
+     * Expected result is that the PR should be skipped. No causes should be
+     * identified.
+     */
+    @Test
+    public void shouldSkipEvenThoughNewCommit() throws Exception {
+        GHCommitPointer commitPtr = mock(GHCommitPointer.class);
+        when(local.getPulls()).thenReturn(ImmutableMap.of(3, localPR));
+        when(localPR.getHeadSha()).thenReturn("this is not the sha you are looking for");
+        when(remotePR.getNumber()).thenReturn(3);
+        when(remotePR.getState()).thenReturn(GHIssueState.OPEN);
+        when(remotePR.getHead()).thenReturn(commitPtr);
+        when(trigger.getEvents()).thenReturn(asList(
+                new GitHubPRLabelNotExistsEvent(new GitHubPRLabel("notfound"), true),
+                new GitHubPRCommitEvent()));
+
+        List<GitHubPRCause> causes = from(ImmutableSet.of(remotePR))
+                .transform(
+                        toGitHubPRCause(local, tlRule.getListener(), trigger)
+                )
+                .filter(notNull())
+                .toList();
+
+        assertThat("no cause", causes, hasSize(0));
     }
 }

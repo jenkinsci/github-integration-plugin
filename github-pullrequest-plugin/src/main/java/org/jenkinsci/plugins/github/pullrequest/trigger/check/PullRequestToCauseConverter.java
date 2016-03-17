@@ -42,12 +42,18 @@ public class PullRequestToCauseConverter implements Function<GHPullRequest, GitH
         return new PullRequestToCauseConverter(localRepo, listener, trigger);
     }
 
+    /**
+     * @return only real trigger cause if matched trigger (not skip) event found for this remotePr.
+     */
     @Override
     public GitHubPRCause apply(final GHPullRequest remotePR) {
-        return from(trigger.getEvents())
+        final GitHubPRCause gitHubPRCause = from(trigger.getEvents())
                 .transform(toCause(remotePR))
                 .filter(notNull())
-                .firstMatch(new SkippedCauseFilter(listener)).orNull();
+                .first()
+                .get();
+
+        return gitHubPRCause.isSkip() ? null : gitHubPRCause;
     }
 
     @VisibleForTesting
