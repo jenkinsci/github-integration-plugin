@@ -17,6 +17,10 @@ public class GitHubPRTriggerModeDslContext implements Context {
         mode = GitHubPRTriggerMode.HEAVY_HOOKS;
     }
 
+    public void heavyHooksCron() {
+        mode = GitHubPRTriggerMode.HEAVY_HOOKS_CRON;
+    }
+
     public GitHubPRTriggerMode mode() {
         return mode;
     }
