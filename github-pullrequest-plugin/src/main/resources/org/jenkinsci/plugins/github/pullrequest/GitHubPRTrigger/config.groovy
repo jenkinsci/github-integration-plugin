@@ -23,10 +23,6 @@ f.block {
                     checkUrl: "'descriptorByName/hudson.triggers.TimerTrigger/checkSpec?value=' + encodeURIComponent(this.value)")
         }
 
-        f.entry(title: "Set status before build", field: "preStatus") {
-            f.checkbox()
-        }
-
         f.entry(title: "Cancel queued builds", field: "cancelQueued") {
             f.checkbox()
         }
@@ -42,6 +38,8 @@ f.block {
                     hasHeader: true
             )
         }
+
+        f.optionalProperty(title: "Set status before build", field: "preStatus")
 
         f.optionalProperty(title: "Experimental: User Restriction", field: "userRestriction")
 

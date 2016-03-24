@@ -13,6 +13,8 @@ import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Queue;
 import hudson.model.queue.QueueTaskFuture;
+
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRCause;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
 import org.kohsuke.github.GHCommitState;
@@ -79,13 +81,14 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
             LOGGER.info(sb.toString());
 
             // remote connection
-            if (trigger.isPreStatus()) {
+            if (trigger.preStatusEnabled()) {
+                String context = StringUtils.defaultIfBlank(trigger.getPreStatus().getCheckName(), job.getFullName());
                 trigger.getRemoteRepo()
                         .createCommitStatus(cause.getHeadSha(),
                                 GHCommitState.PENDING,
                                 null,
                                 sb.toString(),
-                                job.getFullName());
+                                context);
             }
         } catch (IOException e) {
             LOGGER.error("Can't trigger build ({})", e.getMessage(), e);

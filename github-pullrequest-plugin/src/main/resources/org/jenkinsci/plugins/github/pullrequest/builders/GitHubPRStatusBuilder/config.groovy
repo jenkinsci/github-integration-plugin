@@ -13,3 +13,4 @@ if (instance == null) {
 f.entry(title: _("Build status message")) {
     f.property(field: "statusMessage")
 }
+f.optionalProperty(title: "Use custom status identifier name", field: "customCheck")

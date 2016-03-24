@@ -110,7 +110,8 @@ public class GitHubPRTrigger extends Trigger<Job<?, ?>> {
     /**
      * Set PR(commit) status before build. No configurable message for it.
      */
-    private boolean preStatus = false;
+    @CheckForNull
+    private GitHubPRCheckName preStatus;
     private boolean cancelQueued = false;
     private boolean skipFirstRun = false;
     @CheckForNull
@@ -142,7 +143,7 @@ public class GitHubPRTrigger extends Trigger<Job<?, ?>> {
     }
 
     @DataBoundSetter
-    public void setPreStatus(boolean preStatus) {
+    public void setPreStatus(GitHubPRCheckName preStatus) {
         this.preStatus = preStatus;
     }
 
@@ -166,8 +167,8 @@ public class GitHubPRTrigger extends Trigger<Job<?, ?>> {
         this.branchRestriction = branchRestriction;
     }
 
-    public boolean isPreStatus() {
-        return preStatus;
+    public boolean preStatusEnabled() {
+        return preStatus != null;
     }
 
     public boolean isCancelQueued() {
@@ -184,6 +185,10 @@ public class GitHubPRTrigger extends Trigger<Job<?, ?>> {
 
     public List<GitHubPREvent> getEvents() {
         return events;
+    }
+
+    public GitHubPRCheckName getPreStatus() {
+        return preStatus;
     }
 
     public GitHubPRUserRestriction getUserRestriction() {

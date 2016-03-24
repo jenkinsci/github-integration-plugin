@@ -10,6 +10,7 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRCause;
+import org.jenkinsci.plugins.github.pullrequest.GitHubPRCheckName;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRMessage;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
 import org.jenkinsci.plugins.github.util.JobInfoHelpers;
@@ -17,6 +18,7 @@ import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.github.GHCommitState;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +26,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
@@ -39,6 +42,8 @@ public class GitHubPRStatusBuilder extends Builder implements SimpleBuildStep {
     @CheckForNull
     private GitHubPRMessage statusMessage = DEFAULT_MESSAGE;
 
+    private GitHubPRCheckName customCheck;
+
     /**
      * Constructor with defaults. Only for groovy UI.
      */
@@ -53,10 +58,18 @@ public class GitHubPRStatusBuilder extends Builder implements SimpleBuildStep {
         }
     }
 
+    @DataBoundSetter
+    public void setCustomCheck(GitHubPRCheckName customCheck) {
+        this.customCheck = customCheck;
+    }
+
     public GitHubPRMessage getStatusMessage() {
         return statusMessage;
     }
 
+    public GitHubPRCheckName getCustomCheck() {
+        return customCheck;
+    }
     @Override
     public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath workspace, @Nonnull Launcher launcher,
                         @Nonnull TaskListener listener) throws InterruptedException, IOException {
@@ -77,12 +90,17 @@ public class GitHubPRStatusBuilder extends Builder implements SimpleBuildStep {
             if (nonNull(statusMessage)) {
                 String url = trigger.getDescriptor().getJenkinsURL() + run.getUrl();
 
+                String context = run.getParent().getFullName();
+                if (null != customCheck) {
+                    context = defaultIfBlank(customCheck.getCheckName(), context);
+                }
+
                 trigger.getRemoteRepo().createCommitStatus(
                         cause.getHeadSha(),
                         GHCommitState.PENDING,
                         url,
                         statusMessage.expandAll(run, listener),
-                        run.getParent().getFullName()
+                        context
                 );
             }
         } catch (Exception e) {

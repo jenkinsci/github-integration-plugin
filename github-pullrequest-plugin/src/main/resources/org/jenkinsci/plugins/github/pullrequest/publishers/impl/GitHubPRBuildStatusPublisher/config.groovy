@@ -21,6 +21,14 @@ f.entry(title: _("Mark unstable build in GitHub as "), field: "unstableAs") {
     }
 }
 
+f.optionalProperty(title: "Use custom status identifier name", field: "customCheck")
+
 f.optionalProperty(title: "Use messages in case of status setting failure", field: "buildMessage")
 
 f.optionalProperty(title: "Handle publisher errors", field: "errorHandler")
+
+f.optionalProperty(title: "Force specific status", field: "forceStatus") {
+    f.enum() {
+        text(my.name().toLowerCase().capitalize())
+    }
+}

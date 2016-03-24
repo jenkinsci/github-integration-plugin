@@ -6,6 +6,8 @@ import javaposse.jobdsl.dsl.helpers.publisher.PublisherContext;
 import javaposse.jobdsl.dsl.helpers.triggers.TriggerContext;
 import javaposse.jobdsl.plugin.ContextExtensionPoint;
 import javaposse.jobdsl.plugin.DslExtensionMethod;
+
+import org.jenkinsci.plugins.github.pullrequest.GitHubPRCheckName;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
 import org.jenkinsci.plugins.github.pullrequest.dsl.context.GitHubPRTriggerDslContext;
 import org.jenkinsci.plugins.github.pullrequest.dsl.context.publishers.GitHubPRStatusPublisherDslContext;
@@ -24,7 +26,7 @@ public class GitHubPRJobDslExtension extends ContextExtensionPoint {
         executeInContext(closure, context);
 
         GitHubPRTrigger trigger = new GitHubPRTrigger(context.cron(), context.mode(), context.events());
-        trigger.setPreStatus(context.isSetPreStatus());
+        trigger.setPreStatus(context.isSetPreStatus() ? new GitHubPRCheckName("") : null);
         return trigger;
     }
 

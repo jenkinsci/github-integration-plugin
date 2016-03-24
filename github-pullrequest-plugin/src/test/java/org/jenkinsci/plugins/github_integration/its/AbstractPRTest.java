@@ -19,6 +19,7 @@ import org.hamcrest.Matchers;
 import org.jenkinsci.plugins.github.GitHubPlugin;
 import org.jenkinsci.plugins.github.config.GitHubPluginConfig;
 import org.jenkinsci.plugins.github.config.GitHubServerConfig;
+import org.jenkinsci.plugins.github.pullrequest.GitHubPRCheckName;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRPollingLogAction;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRPullRequest;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRRepository;
@@ -196,7 +197,7 @@ public abstract class AbstractPRTest {
         gitHubPREvents.add(new GitHubPRCommitEvent());
 
         final GitHubPRTrigger gitHubPRTrigger = new GitHubPRTrigger("", GitHubPRTriggerMode.CRON, gitHubPREvents);
-        gitHubPRTrigger.setPreStatus(true);
+        gitHubPRTrigger.setPreStatus(new GitHubPRCheckName(""));
 
         return gitHubPRTrigger;
     }
