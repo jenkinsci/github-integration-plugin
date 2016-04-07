@@ -49,7 +49,8 @@ public class SetCommitStatusExecution extends AbstractSynchronousNonBlockingStep
 
         final GitHubPRCause cause = build.getCause(GitHubPRCause.class);
         if (isNull(cause)) {
-            throw new ProjectConfigurationException("pullRequestSetCommitStatus requires build to be triggered by GitHub Pull Request");
+            throw new ProjectConfigurationException("pullRequestSetCommitStatus "
+                                + "requires build to be triggered by GitHub Pull Request");
         }
         //
         // Update the commit status
