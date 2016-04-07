@@ -17,7 +17,7 @@ import hudson.Extension;
 public class SetCommitStatusStep extends AbstractStepImpl implements Serializable {
 
     /** YYYYMMDD */
-    private static final long serialVersionUID = 20160401L;
+    private static final long serialVersionUID = 1L;
 
     @DataBoundSetter private String context;
 

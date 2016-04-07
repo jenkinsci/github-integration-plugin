@@ -8,11 +8,12 @@ import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRCause;
+import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
+import org.jenkinsci.plugins.github.util.JobInfoHelpers;
 import org.jenkinsci.plugins.workflow.steps.AbstractSynchronousNonBlockingStepExecution;
 import org.jenkinsci.plugins.workflow.steps.StepContextParameter;
 import org.kohsuke.github.GHRepository;
 
-import com.cloudbees.jenkins.GitHubRepositoryName;
 import com.coravy.hudson.plugins.github.GithubProjectProperty;
 import com.google.inject.Inject;
 
@@ -26,10 +27,10 @@ import jenkins.model.JenkinsLocationConfiguration;
 public class SetCommitStatusExecution extends AbstractSynchronousNonBlockingStepExecution<Void> {
 
     /** YYYYMMDD */
-    private static final long serialVersionUID = 20160401L;
+    private static final long serialVersionUID = 1L;
 
     @StepContextParameter
-    private transient Run<?, ?> build;
+    private transient Run<?, ?> run;
 
     @StepContextParameter
     private transient TaskListener log;
@@ -47,7 +48,7 @@ public class SetCommitStatusExecution extends AbstractSynchronousNonBlockingStep
         GHRepository repository = resolveRepository();
         String statusContext = resolveContext();
 
-        final GitHubPRCause cause = build.getCause(GitHubPRCause.class);
+        final GitHubPRCause cause = run.getCause(GitHubPRCause.class);
         if (isNull(cause)) {
             throw new ProjectConfigurationException("pullRequestSetCommitStatus "
                                 + "requires build to be triggered by GitHub Pull Request");
@@ -68,7 +69,7 @@ public class SetCommitStatusExecution extends AbstractSynchronousNonBlockingStep
             log.error("Jenkins Location is not configured in system settings. Cannot create a 'details' link.");
             buildUrl = null;
         } else {
-            buildUrl += build.getUrl();
+            buildUrl += run.getUrl();
         }
 
         repository.createCommitStatus(cause.getHeadSha(),
@@ -86,27 +87,15 @@ public class SetCommitStatusExecution extends AbstractSynchronousNonBlockingStep
      * necessary credentials).
      */
     private GHRepository resolveRepository() throws ProjectConfigurationException {
-        String repositoryURL;
         //
-        // Use the GitHub repo as defined in the job settings
+        // The trigger already has the ability to look this up, D.R.Y.
         //
-        GithubProjectProperty githubProperty = build.getParent().getProperty(GithubProjectProperty.class);
-        if (isNull(githubProperty) || isBlank(githubProperty.getProjectUrlStr())) {
-            throw new ProjectConfigurationException("pullRequest: GitHub repository not configured for build project");
+        try {
+            GitHubPRTrigger trigger = JobInfoHelpers.triggerFrom(run.getParent(), GitHubPRTrigger.class);
+            return trigger.getRemoteRepo();
+        } catch (Exception e) {
+            throw new ProjectConfigurationException("pullRequest: GitHub repository not configured for project", e);
         }
-        repositoryURL = githubProperty.getProjectUrlStr();
-
-        GitHubRepositoryName repoName = GitHubRepositoryName.create(repositoryURL);
-        if (isNull(repoName)) {
-            throw new ProjectConfigurationException("Invalid URL \"" + repositoryURL + "\" provided as GitHub project");
-        }
-
-        GHRepository resolvedRepo = repoName.resolveOne();
-        if (isNull(resolvedRepo)) {
-            throw new ProjectConfigurationException("No configuration found for GitHub server at \""
-                                                            + repositoryURL + "\". Check global configuration.");
-        }
-        return resolvedRepo;
     }
 
     /**
@@ -123,11 +112,11 @@ public class SetCommitStatusExecution extends AbstractSynchronousNonBlockingStep
         if (isNotBlank(config.getContext())) {
             return config.getContext();
         }
-        GithubProjectProperty githubProperty = build.getParent().getProperty(GithubProjectProperty.class);
+        GithubProjectProperty githubProperty = run.getParent().getProperty(GithubProjectProperty.class);
         if (isNull(githubProperty) || isBlank(githubProperty.getDisplayName())) {
             log.error("Unable to determine commit status context (the check name). "
                            + "Argument 'context' not provided and no default configured. Using job name as fallback.");
-            return build.getParent().getFullName();
+            return run.getParent().getFullName();
         }
         return githubProperty.getDisplayName();
     }
