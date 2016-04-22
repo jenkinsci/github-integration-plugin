@@ -1,6 +1,5 @@
 package org.jenkinsci.plugins.github.pullrequest;
 
-import hudson.model.BuildBadgeAction;
 import hudson.model.Cause;
 import hudson.model.Run;
 import hudson.triggers.SCMTrigger;
