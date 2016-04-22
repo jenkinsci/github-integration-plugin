@@ -13,6 +13,7 @@ import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Queue;
 import hudson.model.queue.QueueTaskFuture;
+import org.jenkinsci.plugins.github.pullrequest.GitHubPRBadgeAction;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRCause;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
 import org.kohsuke.github.GHCommitState;
@@ -135,8 +136,10 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
                 CAUSE_SKIP.param(cause.isSkip()),
                 NUMBER.param(String.valueOf(cause.getNumber()))
         ));
+        GitHubPRBadgeAction gitHubPRBadgeAction = new GitHubPRBadgeAction(cause);
         //TODO no way to get quietPeriod, so temporary ignore it
-        return asParameterizedJobMixIn(job).scheduleBuild2(0, new CauseAction(cause), new ParametersAction(values));
+        return asParameterizedJobMixIn(job).scheduleBuild2(0, new CauseAction(cause), new ParametersAction(values),
+                gitHubPRBadgeAction);
     }
 
     /**

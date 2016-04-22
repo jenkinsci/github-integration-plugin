@@ -17,6 +17,9 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import static org.jenkinsci.plugins.github_integration.junit.GHRule.getPreconfiguredProperty;
+import static org.jenkinsci.plugins.github_integration.junit.GHRule.getPreconfiguredTrigger;
+
 /**
  * @author Kanstantsin Shautsou
  */
@@ -25,9 +28,9 @@ public class FreestyleITest extends AbstractPRTest {
     @Test
     public void freestyleTest() throws Exception {
         // create job
-        FreeStyleProject job = j.createFreeStyleProject(JOB_NAME);
+        FreeStyleProject job = j.createFreeStyleProject("freestyle-job");
 
-        job.addProperty(getPreconfiguredProperty());
+        job.addProperty(getPreconfiguredProperty(ghRule.getGhRepo()));
 
         job.addTrigger(getPreconfiguredTrigger());
 
@@ -39,6 +42,6 @@ public class FreestyleITest extends AbstractPRTest {
 
         job.save();
 
-        super.basicTest();
+        super.basicTest(job);
     }
 }

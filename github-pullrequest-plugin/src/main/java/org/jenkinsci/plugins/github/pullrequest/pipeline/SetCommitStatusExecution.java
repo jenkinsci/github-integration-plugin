@@ -26,7 +26,6 @@ import jenkins.model.JenkinsLocationConfiguration;
  */
 public class SetCommitStatusExecution extends AbstractSynchronousNonBlockingStepExecution<Void> {
 
-    /** YYYYMMDD */
     private static final long serialVersionUID = 1L;
 
     @StepContextParameter
@@ -92,7 +91,11 @@ public class SetCommitStatusExecution extends AbstractSynchronousNonBlockingStep
         //
         try {
             GitHubPRTrigger trigger = JobInfoHelpers.triggerFrom(run.getParent(), GitHubPRTrigger.class);
-            return trigger.getRemoteRepo();
+            if (trigger != null) {
+                return trigger.getRemoteRepo();
+            } else {
+                throw new ProjectConfigurationException("GitHub PullRequest trigger isn't available.");
+            }
         } catch (Exception e) {
             throw new ProjectConfigurationException("pullRequest: GitHub repository not configured for project", e);
         }

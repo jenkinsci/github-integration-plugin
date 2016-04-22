@@ -16,14 +16,16 @@ import hudson.Extension;
  */
 public class SetCommitStatusStep extends AbstractStepImpl implements Serializable {
 
-    /** YYYYMMDD */
     private static final long serialVersionUID = 1L;
 
-    @DataBoundSetter private String context;
+    @DataBoundSetter
+    private String context;
 
-    @DataBoundSetter private GHCommitState state;
+    @DataBoundSetter
+    private GHCommitState state;
 
-    @DataBoundSetter private String message;
+    @DataBoundSetter
+    private String message;
 
     @DataBoundConstructor
     public SetCommitStatusStep() {
@@ -62,12 +64,12 @@ public class SetCommitStatusStep extends AbstractStepImpl implements Serializabl
 
         @Override
         public String getFunctionName() {
-            return "pullRequestSetCommitStatus";
+            return "setGitHubPullRequestStatus";
         }
 
         @Override
         public String getDisplayName() {
-            return "Set GitHub Commit Status";
+            return "Set GitHub PullRequest Commit Status";
         }
     }
 }

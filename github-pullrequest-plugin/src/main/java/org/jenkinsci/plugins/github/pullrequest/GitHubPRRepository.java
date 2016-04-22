@@ -5,6 +5,7 @@ import hudson.BulkChange;
 import hudson.Functions;
 import hudson.XmlFile;
 import hudson.model.Action;
+import hudson.model.BuildBadgeAction;
 import hudson.model.CauseAction;
 import hudson.model.Item;
 import hudson.model.Job;
@@ -249,7 +250,8 @@ public class GitHubPRRepository implements Action, Saveable {
                 .scheduleBuild2(
                         0,
                         run.getAction(ParametersAction.class),
-                        run.getAction(CauseAction.class)
+                        run.getAction(CauseAction.class),
+                        run.getAction(BuildBadgeAction.class)
                 );
         return queueTaskFuture != null;
     }

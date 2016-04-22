@@ -40,24 +40,24 @@ public class GitHubPRBuildListener extends RunListener<Run<?, ?>> {
         }
     }
 
-    @Override
-    public void onStarted(Run<?, ?> run, TaskListener listener) {
-        GitHubPRTrigger trigger = ghPRTriggerFromRun(run);
-        if (isNull(trigger)) {
-            return;
-        }
-
-        GitHubPRCause cause = run.getCause(GitHubPRCause.class);
-        if (isNull(cause)) {
-            return;
-        }
-
-        // short build description shown in history
-        try {
-            run.setDescription("<a title=\"" + cause.getTitle() + "\" href=\"" + cause.getHtmlUrl() + "\">PR #"
-                    + cause.getNumber() + "</a>: " + cause.getAbbreviatedTitle());
-        } catch (IOException e) {
-            LOGGER.error("Can't set build description", e);
-        }
-    }
+//    @Override
+//    public void onStarted(Run<?, ?> run, TaskListener listener) {
+//        GitHubPRTrigger trigger = ghPRTriggerFromRun(run);
+//        if (isNull(trigger)) {
+//            return;
+//        }
+//
+//        GitHubPRCause cause = run.getCause(GitHubPRCause.class);
+//        if (isNull(cause)) {
+//            return;
+//        }
+//
+//        // short build description shown in history
+//        try {
+//            run.setDescription("<a title=\"" + cause.getTitle() + "\" href=\"" + cause.getHtmlUrl() + "\">PR #"
+//                    + cause.getNumber() + "</a>: " + cause.getAbbreviatedTitle());
+//        } catch (IOException e) {
+//            LOGGER.error("Can't set build description", e);
+//        }
+//    }
 }
