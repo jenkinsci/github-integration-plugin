@@ -50,6 +50,7 @@ import static org.apache.commons.io.FileUtils.writeStringToFile;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.jenkinsci.plugins.github.config.GitHubServerConfig.loginToGithub;
+import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 
 /**
  * @author Kanstantsin Shautsou
@@ -225,7 +226,7 @@ public class GHRule implements TestRule {
             LOG.debug("Waiting for GitHub...");
             Thread.sleep(2 * 1000);
             gitHub = loginToGithub().apply(gitHubServerConfig);
-            if (gitHub != null) {
+            if (nonNull(gitHub)) {
                 return gitHub;
             }
             if (System.currentTimeMillis() - startTime > timeout) {
@@ -242,7 +243,7 @@ public class GHRule implements TestRule {
             LOG.debug("Waiting for GitHub...");
             Thread.sleep(2 * 1000);
             repository = gitHub.getRepository(repoName);
-            if (repository != null) {
+            if (nonNull(repository)) {
                 return repository;
             }
             if (System.currentTimeMillis() - startTime > timeout) {
@@ -277,7 +278,7 @@ public class GHRule implements TestRule {
 
         String oldLog = null;
         final GitHubPRPollingLogAction oldAction = job.getAction(GitHubPRPollingLogAction.class);
-        if (oldAction != null) {
+        if (nonNull(oldAction)) {
             oldLog = oldAction.getLog();
         }
 
@@ -288,7 +289,7 @@ public class GHRule implements TestRule {
             Thread.sleep(10);
             final GitHubPRPollingLogAction prLogAction = job.getAction(GitHubPRPollingLogAction.class);
             try {
-                if (prLogAction != null) {
+                if (nonNull(prLogAction)) {
                     final String newLog = prLogAction.getLog();
                     if (!newLog.equals(oldLog) && newLog.contains(GitHubPRTrigger.FINISH_MSG)) {
                         return;
