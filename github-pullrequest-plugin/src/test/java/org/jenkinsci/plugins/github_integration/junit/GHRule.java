@@ -25,7 +25,6 @@ import org.jenkinsci.plugins.github.pullrequest.events.impl.GitHubPRCommitEvent;
 import org.jenkinsci.plugins.github.pullrequest.events.impl.GitHubPROpenEvent;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.junit.Before;
-import org.junit.rules.ExternalResource;
 import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
@@ -116,9 +115,9 @@ public class GHRule implements TestRule {
 
         //reuse github client for GitHub preparation
         gitHubServerConfig = prepareGitHubPlugin();
-        //FIXME no idea why github-plugin doesn't find configuration without delay
-        Thread.sleep(15000);
-        gitHub = loginToGithub().apply(gitHubServerConfig);
+        //FIXME no idea why github-plugin doesn't find configuration without delay, try delay
+        gitHub = waitGH(gitHubServerConfig, 20 * GH_API_DELAY);
+
         assertThat("Specify right GH_TOKEN variable!", gitHub, notNullValue());
         LOG.debug(gitHub.getRateLimit().toString());
 
@@ -130,6 +129,8 @@ public class GHRule implements TestRule {
 
         ghRepo = gitHub.createRepository(repoName, "", "", true);
         LOG.info("Created {}", ghRepo.getHtmlUrl());
+
+        waitGHRepoAppeared(gitHub, ghRepo.getFullName(), 5 * GH_API_DELAY);
 
         // prepare git
         final File gitRootDir = temporaryFolder.newFolder();
@@ -214,6 +215,40 @@ public class GHRule implements TestRule {
         writeStringToFile(new File(gitRootDir, fileName), commitMessage);
         git.add().addFilepattern(".").call();
         git.commit().setAll(true).setMessage(commitMessage).call();
+    }
+
+    public static GitHub waitGH(GitHubServerConfig gitHubServerConfig, long timeout) throws InterruptedException {
+        GitHub gitHub;
+        long startTime = System.currentTimeMillis();
+
+        while (true) {
+            LOG.debug("Waiting for GitHub...");
+            Thread.sleep(2 * 1000);
+            gitHub = loginToGithub().apply(gitHubServerConfig);
+            if (gitHub != null) {
+                return gitHub;
+            }
+            if (System.currentTimeMillis() - startTime > timeout) {
+                throw new AssertionError("GitHub doesn't appear after " + timeout);
+            }
+        }
+    }
+
+    public static GHRepository waitGHRepoAppeared(GitHub gitHub, String repoName, long timeout) throws IOException, InterruptedException {
+        GHRepository repository;
+        long startTime = System.currentTimeMillis();
+
+        while (true) {
+            LOG.debug("Waiting for GitHub...");
+            Thread.sleep(2 * 1000);
+            repository = gitHub.getRepository(repoName);
+            if (repository != null) {
+                return repository;
+            }
+            if (System.currentTimeMillis() - startTime > timeout) {
+                throw new AssertionError("GitHub doesn't appear after " + timeout);
+            }
+        }
     }
 
     public static void waitUntilPRAppears(GHPullRequest pullRequest, long timeout) throws InterruptedException {
