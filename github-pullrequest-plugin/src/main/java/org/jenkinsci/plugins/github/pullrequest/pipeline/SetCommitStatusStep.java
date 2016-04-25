@@ -56,7 +56,8 @@ public class SetCommitStatusStep extends AbstractStepImpl implements Serializabl
     }
 
     @Extension
-    public static class DescriptorImpl extends AbstractStepDescriptorImpl {
+    public static final class DescriptorImpl extends AbstractStepDescriptorImpl {
+        public static final String FUNC_NAME = "setGitHubPullRequestStatus";
 
         public DescriptorImpl() {
             super(SetCommitStatusExecution.class);
@@ -64,7 +65,7 @@ public class SetCommitStatusStep extends AbstractStepImpl implements Serializabl
 
         @Override
         public String getFunctionName() {
-            return "setGitHubPullRequestStatus";
+            return FUNC_NAME;
         }
 
         @Override

@@ -4,9 +4,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.jenkinsci.plugins.github.pullrequest.pipeline.SetCommitStatusStep.DescriptorImpl.FUNC_NAME;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 
+import hudson.AbortException;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRCause;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
 import org.jenkinsci.plugins.github.util.JobInfoHelpers;
@@ -20,6 +22,8 @@ import com.google.inject.Inject;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import jenkins.model.JenkinsLocationConfiguration;
+
+import java.io.IOException;
 
 /**
  * Pipeline DSL step to update a GitHub commit status for a pull request.
@@ -39,9 +43,7 @@ public class SetCommitStatusExecution extends AbstractSynchronousNonBlockingStep
 
     @Override
     protected Void run() throws Exception {
-        //
         // Figure out which GitHub repository to send the request to
-        //
         checkArgument(nonNull(config.getState()), "Missing required parameter 'state'");
 
         GHRepository repository = resolveRepository();
@@ -49,16 +51,15 @@ public class SetCommitStatusExecution extends AbstractSynchronousNonBlockingStep
 
         final GitHubPRCause cause = run.getCause(GitHubPRCause.class);
         if (isNull(cause)) {
-            throw new ProjectConfigurationException("pullRequestSetCommitStatus "
-                                + "requires build to be triggered by GitHub Pull Request");
+            throw new AbortException(FUNC_NAME + " requires run to be triggered by GitHub Pull Request");
         }
-        //
+
         // Update the commit status
-        //
         log.getLogger().printf("Setting pull request status %s to %s with message: %s%n",
-                               statusContext,
-                               config.getState(),
-                               config.getMessage());
+                statusContext,
+                config.getState(),
+                config.getMessage()
+        );
         String buildUrl = null;
         final JenkinsLocationConfiguration globalConfig = JenkinsLocationConfiguration.get();
         if (nonNull(globalConfig)) {
@@ -72,10 +73,10 @@ public class SetCommitStatusExecution extends AbstractSynchronousNonBlockingStep
         }
 
         repository.createCommitStatus(cause.getHeadSha(),
-                                      config.getState(),
-                                      buildUrl,
-                                      config.getMessage(),
-                                      statusContext);
+                config.getState(),
+                buildUrl,
+                config.getMessage(),
+                statusContext);
         return null;
     }
 
@@ -85,19 +86,18 @@ public class SetCommitStatusExecution extends AbstractSynchronousNonBlockingStep
      * has a corresponding "Server" configuration in the global settings (which provides the
      * necessary credentials).
      */
-    private GHRepository resolveRepository() throws ProjectConfigurationException {
-        //
+    private GHRepository resolveRepository() throws IOException {
         // The trigger already has the ability to look this up, D.R.Y.
-        //
         try {
             GitHubPRTrigger trigger = JobInfoHelpers.triggerFrom(run.getParent(), GitHubPRTrigger.class);
             if (trigger != null) {
                 return trigger.getRemoteRepo();
             } else {
-                throw new ProjectConfigurationException("GitHub PullRequest trigger isn't available.");
+                throw new AbortException("GitHub PullRequest trigger isn't available.");
             }
         } catch (Exception e) {
-            throw new ProjectConfigurationException("pullRequest: GitHub repository not configured for project", e);
+            log.error("pullRequest: GitHub repository not configured for project?");
+            throw e;
         }
     }
 
@@ -118,7 +118,7 @@ public class SetCommitStatusExecution extends AbstractSynchronousNonBlockingStep
         GithubProjectProperty githubProperty = run.getParent().getProperty(GithubProjectProperty.class);
         if (isNull(githubProperty) || isBlank(githubProperty.getDisplayName())) {
             log.error("Unable to determine commit status context (the check name). "
-                           + "Argument 'context' not provided and no default configured. Using job name as fallback.");
+                    + "Argument 'context' not provided and no default configured. Using job name as fallback.");
             return run.getParent().getFullName();
         }
         return githubProperty.getDisplayName();

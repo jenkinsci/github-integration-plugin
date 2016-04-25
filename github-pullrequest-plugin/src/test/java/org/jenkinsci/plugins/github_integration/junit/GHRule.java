@@ -30,8 +30,6 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.kohsuke.github.GHIssueState;
-import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 import org.slf4j.Logger;
@@ -45,12 +43,15 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
+import static com.jayway.awaitility.Awaitility.await;
 import static org.apache.commons.io.FileUtils.writeStringToFile;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.jenkinsci.plugins.github.config.GitHubServerConfig.loginToGithub;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
+import static org.jenkinsci.plugins.github_integration.awaitility.GHRepoAppeared.ghRepoAppeared;
 
 /**
  * @author Kanstantsin Shautsou
@@ -100,13 +101,17 @@ public class GHRule implements TestRule {
             @Override
             public void evaluate() throws Throwable {
                 before(description);
-//                try {
-                base.evaluate();
-//                } finally {
-//                    after();
-//                }
+                try {
+                    base.evaluate();
+                } finally {
+                    after();
+                }
             }
         };
+    }
+
+    private void after() {
+
     }
 
     @Before
@@ -131,7 +136,9 @@ public class GHRule implements TestRule {
         ghRepo = gitHub.createRepository(repoName, "", "", true);
         LOG.info("Created {}", ghRepo.getHtmlUrl());
 
-        waitGHRepoAppeared(gitHub, ghRepo.getFullName(), 5 * GH_API_DELAY);
+        await().pollInterval(2, TimeUnit.SECONDS)
+                .atMost(60, TimeUnit.SECONDS)
+                .until(ghRepoAppeared(gitHub, ghRepo.getFullName()));
 
         // prepare git
         final File gitRootDir = temporaryFolder.newFolder();
@@ -235,42 +242,6 @@ public class GHRule implements TestRule {
         }
     }
 
-    public static GHRepository waitGHRepoAppeared(GitHub gitHub, String repoName, long timeout) throws IOException, InterruptedException {
-        GHRepository repository;
-        long startTime = System.currentTimeMillis();
-
-        while (true) {
-            LOG.debug("Waiting for GitHub...");
-            Thread.sleep(2 * 1000);
-            repository = gitHub.getRepository(repoName);
-            if (nonNull(repository)) {
-                return repository;
-            }
-            if (System.currentTimeMillis() - startTime > timeout) {
-                throw new AssertionError("GitHub doesn't appear after " + timeout);
-            }
-        }
-    }
-
-    public static void waitUntilPRAppears(GHPullRequest pullRequest, long timeout) throws InterruptedException {
-        final GHRepository repository = pullRequest.getRepository();
-        long startTime = System.currentTimeMillis();
-
-        while (true) {
-            Thread.sleep(2 * 1000);
-            for (GHPullRequest pr : repository.listPullRequests(GHIssueState.OPEN).asList()) {
-                if (pr.getId() == pullRequest.getId()) {
-                    LOG.debug("Delay : {}", System.currentTimeMillis() - startTime);
-                    return;
-                }
-            }
-
-            if (System.currentTimeMillis() - startTime > timeout) {
-                throw new AssertionError("PR " + pullRequest + " doesn't appear in list of PRs");
-            }
-        }
-    }
-
     public static void runTriggerAndWaitUntilEnd(GitHubPRTrigger trigger, long timeout)
             throws InterruptedException, IOException {
         final Job<?, ?> job = trigger.getJob();
@@ -303,4 +274,5 @@ public class GHRule implements TestRule {
             }
         }
     }
+
 }
