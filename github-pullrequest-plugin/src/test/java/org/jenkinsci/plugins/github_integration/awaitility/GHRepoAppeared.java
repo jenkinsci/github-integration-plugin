@@ -17,8 +17,8 @@ import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull
 public class GHRepoAppeared implements Callable<Boolean> {
     private static final Logger LOG = LoggerFactory.getLogger(GHRepoAppeared.class);
 
-    private GitHub gitHub;
-    private String repoName;
+    private final GitHub gitHub;
+    private final String repoName;
 
     public GHRepoAppeared(final GitHub gitHub, final String repoName) {
         this.gitHub = gitHub;
@@ -29,7 +29,7 @@ public class GHRepoAppeared implements Callable<Boolean> {
     public Boolean call() throws Exception {
         GHRepository repository = null;
         try {
-            repository= gitHub.getRepository(repoName);
+            repository = gitHub.getRepository(repoName);
         } catch (FileNotFoundException ignore) {
         }
         LOG.debug("[WAIT] GitHub repository '{}' {}", repoName, isNull(repository) ? "doesn't appeared" : "appeared");

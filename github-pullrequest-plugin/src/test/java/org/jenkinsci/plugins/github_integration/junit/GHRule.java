@@ -43,7 +43,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import static com.jayway.awaitility.Awaitility.await;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -137,8 +136,8 @@ public class GHRule implements TestRule {
         if (ghRepo != null) {
             LOG.info("Deleting {}", ghRepo.getHtmlUrl());
             ghRepo.delete();
-            await().pollInterval(2, SECONDS)
-                    .atMost(120, SECONDS)
+            await().pollInterval(3, SECONDS)
+                    .timeout(120, SECONDS)
                     .until(ghRepoDeleted(gitHub, ghRepo.getFullName()));
         }
 
@@ -146,7 +145,7 @@ public class GHRule implements TestRule {
         LOG.info("Created {}", ghRepo.getHtmlUrl());
 
         await().pollInterval(2, SECONDS)
-                .atMost(120, SECONDS)
+                .timeout(120, SECONDS)
                 .until(ghRepoAppeared(gitHub, ghRepo.getFullName()));
 
         // prepare git
@@ -205,6 +204,7 @@ public class GHRule implements TestRule {
         final List<GitHubServerConfig> gitHubServerConfigs = new ArrayList<>();
         final GitHubServerConfig gitHubServerConfig = new GitHubServerConfig(cred.getId());
         gitHubServerConfig.setManageHooks(false);
+        gitHubServerConfig.setClientCacheSize(0);
         gitHubServerConfigs.add(gitHubServerConfig);
 
         gitHubPluginConfig.setConfigs(gitHubServerConfigs);
@@ -284,4 +284,17 @@ public class GHRule implements TestRule {
         }
     }
 
+//    because org.jenkinsci.plugins.github.internal.GitHubLoginFunction$OkHttpConnector is private
+//    public static void flushCache(GitHub gitHub) {
+//        try {
+//            OkHttpConnector okHttpConnector = (OkHttpConnector) gitHub.getConnector();
+//            Field field = okHttpConnector.getClass().getField("urlFactory");
+//            field.setAccessible(true);
+//            OkUrlFactory urlFactory = (OkUrlFactory) field.get(okHttpConnector);
+//            urlFactory.client().getCache().flush();
+//        } catch (Exception ex) {
+//            Throwables.propagate(ex);
+//        }
+//        LOG.debug("Flushed GitHub connector cache");
+//    }
 }
