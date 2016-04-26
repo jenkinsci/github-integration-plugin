@@ -46,12 +46,14 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static com.jayway.awaitility.Awaitility.await;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.commons.io.FileUtils.writeStringToFile;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.jenkinsci.plugins.github.config.GitHubServerConfig.loginToGithub;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 import static org.jenkinsci.plugins.github_integration.awaitility.GHRepoAppeared.ghRepoAppeared;
+import static org.jenkinsci.plugins.github_integration.awaitility.GHRepoDeleted.ghRepoDeleted;
 
 /**
  * @author Kanstantsin Shautsou
@@ -111,7 +113,11 @@ public class GHRule implements TestRule {
     }
 
     private void after() {
-
+        try {
+            ghRepo.delete();
+        } catch (IOException e) {
+            LOG.error("Can't delete {}", ghRepo.getFullName(), e);
+        }
     }
 
     @Before
@@ -131,13 +137,16 @@ public class GHRule implements TestRule {
         if (ghRepo != null) {
             LOG.info("Deleting {}", ghRepo.getHtmlUrl());
             ghRepo.delete();
+            await().pollInterval(2, SECONDS)
+                    .atMost(120, SECONDS)
+                    .until(ghRepoDeleted(gitHub, ghRepo.getFullName()));
         }
 
         ghRepo = gitHub.createRepository(repoName, "", "", true);
         LOG.info("Created {}", ghRepo.getHtmlUrl());
 
-        await().pollInterval(2, TimeUnit.SECONDS)
-                .atMost(60, TimeUnit.SECONDS)
+        await().pollInterval(2, SECONDS)
+                .atMost(120, SECONDS)
                 .until(ghRepoAppeared(gitHub, ghRepo.getFullName()));
 
         // prepare git

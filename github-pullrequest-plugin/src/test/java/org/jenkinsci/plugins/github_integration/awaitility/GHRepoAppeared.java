@@ -5,6 +5,7 @@ import org.kohsuke.github.GitHub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileNotFoundException;
 import java.util.concurrent.Callable;
 
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
@@ -26,7 +27,11 @@ public class GHRepoAppeared implements Callable<Boolean> {
 
     @Override
     public Boolean call() throws Exception {
-        GHRepository repository = gitHub.getRepository(repoName);
+        GHRepository repository = null;
+        try {
+            repository= gitHub.getRepository(repoName);
+        } catch (FileNotFoundException ignore) {
+        }
         LOG.debug("[WAIT] GitHub repository '{}' {}", repoName, isNull(repository) ? "doesn't appeared" : "appeared");
         return nonNull(repository);
     }
