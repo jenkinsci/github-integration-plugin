@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 
+import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.ghPRCauseFromRun;
 import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.ghPRTriggerFromRun;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
@@ -30,7 +31,7 @@ public class GitHubPRBuildListener extends RunListener<Run<?, ?>> {
             return;
         }
 
-        GitHubPRCause cause = run.getCause(GitHubPRCause.class);
+        GitHubPRCause cause = ghPRCauseFromRun(run);
 
         if (nonNull(cause)) {
             //remove all BuildData, because it doesn't work right with pull requests now

@@ -9,6 +9,7 @@
 
     <logger name="org.jenkinsci.plugins.github" level="DEBUG"/>
     <logger name="org.jenkinsci.plugins.github_integration" level="DEBUG"/>
+    <logger name="org.mortbay.log" level="INFO"/>
 
     <root level="DEBUG">
         <appender-ref ref="STDOUT"/>

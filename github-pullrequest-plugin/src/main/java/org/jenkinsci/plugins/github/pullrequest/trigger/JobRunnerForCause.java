@@ -3,6 +3,8 @@ package org.jenkinsci.plugins.github.pullrequest.trigger;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
+import hudson.matrix.MatrixConfiguration;
+import hudson.matrix.MatrixProject;
 import hudson.model.Action;
 import hudson.model.Cause;
 import hudson.model.CauseAction;
@@ -24,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static com.cloudbees.jenkins.GitHubWebHook.getJenkinsInstance;
@@ -83,12 +86,24 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
 
             // remote connection
             if (trigger.isPreStatus()) {
-                trigger.getRemoteRepo()
-                        .createCommitStatus(cause.getHeadSha(),
-                                GHCommitState.PENDING,
-                                job.getAbsoluteUrl(),
-                                sb.toString(),
-                                job.getFullName());
+                if (job instanceof MatrixProject) {
+                    Collection<? extends MatrixConfiguration> configs = ((MatrixProject) job).getActiveConfigurations();
+                    for (MatrixConfiguration config : configs) {
+                        trigger.getRemoteRepo()
+                                .createCommitStatus(cause.getHeadSha(),
+                                        GHCommitState.PENDING,
+                                        config.getAbsoluteUrl(),
+                                        sb.toString(),
+                                        config.getFullName());
+                    }
+                } else {
+                    trigger.getRemoteRepo()
+                            .createCommitStatus(cause.getHeadSha(),
+                                    GHCommitState.PENDING,
+                                    job.getAbsoluteUrl(),
+                                    sb.toString(),
+                                    job.getFullName());
+                }
             }
         } catch (IOException e) {
             LOGGER.error("Can't trigger build ({})", e.getMessage(), e);

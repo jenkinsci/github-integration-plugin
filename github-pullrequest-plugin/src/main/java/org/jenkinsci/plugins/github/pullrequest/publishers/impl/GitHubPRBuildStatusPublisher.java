@@ -31,6 +31,7 @@ import java.io.PrintStream;
 
 import static org.apache.commons.lang.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.ghPRCauseFromRun;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 
@@ -82,7 +83,7 @@ public class GitHubPRBuildStatusPublisher extends GitHubPRAbstractPublisher {
 
         GHCommitState state = getCommitState(run, unstableAs);
 
-        GitHubPRCause c = run.getCause(GitHubPRCause.class);
+        GitHubPRCause c = ghPRCauseFromRun(run);
 
         String statusMsgValue = getStatusMsg().expandAll(run, listener);
         String buildUrl = publishedURL + run.getUrl();
