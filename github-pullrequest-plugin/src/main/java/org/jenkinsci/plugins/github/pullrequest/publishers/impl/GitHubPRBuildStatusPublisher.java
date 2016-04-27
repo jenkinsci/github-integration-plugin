@@ -17,7 +17,6 @@ import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
 import org.jenkinsci.plugins.github.pullrequest.publishers.GitHubPRAbstractPublisher;
 import org.jenkinsci.plugins.github.pullrequest.utils.PublisherErrorHandler;
 import org.jenkinsci.plugins.github.pullrequest.utils.StatusVerifier;
-import org.jenkinsci.plugins.github.util.JobInfoHelpers;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.github.GHCommitState;
@@ -31,6 +30,8 @@ import java.io.PrintStream;
 
 import static org.apache.commons.lang.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.ghPRCauseFromRun;
+import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.triggerFrom;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 
@@ -82,7 +83,7 @@ public class GitHubPRBuildStatusPublisher extends GitHubPRAbstractPublisher {
 
         GHCommitState state = getCommitState(run, unstableAs);
 
-        GitHubPRCause c = run.getCause(GitHubPRCause.class);
+        GitHubPRCause c = ghPRCauseFromRun(run);
 
         String statusMsgValue = getStatusMsg().expandAll(run, listener);
         String buildUrl = publishedURL + run.getUrl();
@@ -91,9 +92,10 @@ public class GitHubPRBuildStatusPublisher extends GitHubPRAbstractPublisher {
                 c.getHeadSha(), state, buildUrl, statusMsgValue);
 
         // TODO check permissions to write human friendly message
-        final GitHubPRTrigger trigger = JobInfoHelpers.triggerFrom(run.getParent(), GitHubPRTrigger.class);
+        final GitHubPRTrigger trigger = triggerFrom(run.getParent(), GitHubPRTrigger.class);
         if (isNull(trigger)) {
-            // silently skip. TODO implement error handler, like in publishers
+            listener.error("Can't get trigger for this run! Silently skipping. " +
+                    "TODO implement error handler, like in publishers");
             return;
         }
 

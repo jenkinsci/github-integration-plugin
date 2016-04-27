@@ -5,6 +5,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.jenkinsci.plugins.github.pullrequest.pipeline.SetCommitStatusStep.DescriptorImpl.FUNC_NAME;
+import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.triggerFrom;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 
@@ -89,7 +90,7 @@ public class SetCommitStatusExecution extends AbstractSynchronousNonBlockingStep
     private GHRepository resolveRepository() throws IOException {
         // The trigger already has the ability to look this up, D.R.Y.
         try {
-            GitHubPRTrigger trigger = JobInfoHelpers.triggerFrom(run.getParent(), GitHubPRTrigger.class);
+            GitHubPRTrigger trigger = triggerFrom(run.getParent(), GitHubPRTrigger.class);
             if (trigger != null) {
                 return trigger.getRemoteRepo();
             } else {

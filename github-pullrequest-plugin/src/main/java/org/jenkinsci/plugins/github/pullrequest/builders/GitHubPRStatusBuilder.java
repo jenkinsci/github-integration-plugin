@@ -12,7 +12,6 @@ import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRCause;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRMessage;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
-import org.jenkinsci.plugins.github.util.JobInfoHelpers;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.github.GHCommitState;
@@ -25,6 +24,8 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.ghPRCauseFromRun;
+import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.triggerFrom;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 
@@ -61,13 +62,13 @@ public class GitHubPRStatusBuilder extends Builder implements SimpleBuildStep {
     public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath workspace, @Nonnull Launcher launcher,
                         @Nonnull TaskListener listener) throws InterruptedException, IOException {
         // No triggers in Run class, but we need it
-        final GitHubPRTrigger trigger = JobInfoHelpers.triggerFrom(run.getParent(), GitHubPRTrigger.class);
+        final GitHubPRTrigger trigger = triggerFrom(run.getParent(), GitHubPRTrigger.class);
         if (isNull(trigger)) {
             // silently skip. TODO implement error handler, like in publishers
             return;
         }
 
-        GitHubPRCause cause = run.getCause(GitHubPRCause.class);
+        GitHubPRCause cause = ghPRCauseFromRun(run);
         if (isNull(cause)) {
             return;
         }

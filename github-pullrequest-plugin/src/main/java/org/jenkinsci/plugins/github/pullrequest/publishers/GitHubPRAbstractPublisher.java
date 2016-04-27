@@ -15,21 +15,21 @@ import org.jenkinsci.plugins.github.pullrequest.GitHubPRCause;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
 import org.jenkinsci.plugins.github.pullrequest.utils.PublisherErrorHandler;
 import org.jenkinsci.plugins.github.pullrequest.utils.StatusVerifier;
-import org.jenkinsci.plugins.github.util.JobInfoHelpers;
 import org.kohsuke.github.GHCommitState;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GHRepository;
-
-import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.CheckForNull;
+import java.io.IOException;
 
 import static hudson.model.Result.SUCCESS;
 import static hudson.model.Result.UNSTABLE;
+import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.ghPRCauseFromRun;
 import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.ghPRTriggerFromRun;
+import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.triggerFrom;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 
@@ -98,9 +98,9 @@ public abstract class GitHubPRAbstractPublisher extends Recorder implements Simp
     }
 
     public int getNumber(final Run<?, ?> run) throws AbortException {
-        GitHubPRCause cause = run.getCause(GitHubPRCause.class);
+        GitHubPRCause cause = ghPRCauseFromRun(run);
         if (isNull(cause)) {
-            throw new AbortException("Can't get cause from build");
+            throw new AbortException("Can't get cause from run/build");
         }
         number = cause.getNumber();
         return number;
@@ -113,9 +113,9 @@ public abstract class GitHubPRAbstractPublisher extends Recorder implements Simp
         return ghIssue;
     }
 
-    public GHIssue getGhPullRequest(final Run<?, ?> build) throws IOException {
+    public GHIssue getGhPullRequest(final Run<?, ?> run) throws IOException {
         if (isNull(ghPullRequest)) {
-            ghPullRequest = getGhRepository(build).getPullRequest(getNumber(build));
+            ghPullRequest = getGhRepository(run).getPullRequest(getNumber(run));
         }
         return ghPullRequest;
     }
@@ -136,7 +136,7 @@ public abstract class GitHubPRAbstractPublisher extends Recorder implements Simp
 
         try {
             if (nonNull(run)) {
-                final GitHubPRTrigger trigger = JobInfoHelpers.triggerFrom(run.getParent(), GitHubPRTrigger.class);
+                final GitHubPRTrigger trigger = triggerFrom(run.getParent(), GitHubPRTrigger.class);
 
                 GHRepository ghRepository = trigger.getRemoteRepo();
                 ghRepository.getPullRequest(id).comment(finalComment);

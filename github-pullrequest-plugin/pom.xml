@@ -121,6 +121,12 @@
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>matrix-project</artifactId>
+            <version>1.6</version>
+        </dependency>
+
         <!-- for pipeline/workflow step extension -->
         <dependency>
             <groupId>org.jenkins-ci.plugins.workflow</groupId>
