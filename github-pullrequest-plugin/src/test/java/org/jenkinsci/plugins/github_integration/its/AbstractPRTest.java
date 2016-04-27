@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.github_integration.its;
 
+import hudson.matrix.MatrixProject;
 import hudson.model.FreeStyleProject;
 import hudson.model.Job;
 import org.hamcrest.Matchers;
@@ -47,7 +48,7 @@ public abstract class AbstractPRTest {
 
     public void basicTest(Job job) throws Exception {
         // fails with workflow
-        if (job instanceof FreeStyleProject) {
+        if (job instanceof FreeStyleProject || job instanceof MatrixProject) {
             j.configRoundtrip(job); // activate trigger
         }
 

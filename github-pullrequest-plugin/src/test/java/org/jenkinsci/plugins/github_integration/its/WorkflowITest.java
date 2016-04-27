@@ -38,9 +38,7 @@ public class WorkflowITest extends AbstractPRTest {
         );
         workflowJob.save();
 
-//        j.pause();
         super.basicTest(workflowJob);
-//        j.pause();
     }
 
     @Test
@@ -58,7 +56,6 @@ public class WorkflowITest extends AbstractPRTest {
         super.basicTest(workflowJob);
         GHPullRequest pullRequest = ghRule.getGhRepo().getPullRequest(1);
         assertThat(pullRequest, notNullValue());
-//        j.pause();
 
         WorkflowRun lastBuild = workflowJob.getLastBuild();
         assertThat(lastBuild, notNullValue());
