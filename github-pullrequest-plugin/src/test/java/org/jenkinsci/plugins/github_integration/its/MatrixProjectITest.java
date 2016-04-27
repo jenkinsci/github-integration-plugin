@@ -45,7 +45,6 @@ public class MatrixProjectITest extends AbstractPRTest {
         matrixProject.save();
 
         super.basicTest(matrixProject);
-        j.pause();
 
     }
 }

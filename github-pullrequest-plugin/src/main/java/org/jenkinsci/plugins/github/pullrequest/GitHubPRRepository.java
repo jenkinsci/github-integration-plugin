@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.ghPRCauseFromRun;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
 import static org.jenkinsci.plugins.github.util.JobInfoHelpers.asParameterizedJobMixIn;
 
@@ -81,7 +82,7 @@ public class GitHubPRRepository implements Action, Saveable {
         LOGGER.debug("Got builds for job {}", job.getFullName());
 
         for (Run<?, ?> run : runs) {
-            GitHubPRCause cause = run.getCause(GitHubPRCause.class);
+            GitHubPRCause cause = ghPRCauseFromRun(run);
             if (cause != null) {
                 int number = cause.getNumber();
                 List<Run<?, ?>> buildsByNumber = map.get(number);
