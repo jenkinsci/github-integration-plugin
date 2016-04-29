@@ -2,7 +2,6 @@ package org.jenkinsci.plugins.github.pullrequest;
 
 import hudson.model.Cause;
 import hudson.model.Run;
-import hudson.triggers.SCMTrigger;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.github.GHPullRequest;
