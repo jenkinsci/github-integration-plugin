@@ -107,11 +107,12 @@ public class GitHubPRCause extends Cause {
     }
 
     @Override
-    public void onAddedTo(@Nonnull Run build) {
+    public void onAddedTo(@Nonnull Run run) {
+        // move polling log from cause to action
         try {
-            SCMTrigger.BuildAction action = new SCMTrigger.BuildAction(build);
+            GitHubPRPollingLogAction action = new GitHubPRPollingLogAction(run);
             FileUtils.writeStringToFile(action.getPollingLogFile(), pollingLog);
-            build.replaceAction(action);
+            run.replaceAction(action);
         } catch (IOException e) {
             LOGGER.warn("Failed to persist the polling log", e);
         }
