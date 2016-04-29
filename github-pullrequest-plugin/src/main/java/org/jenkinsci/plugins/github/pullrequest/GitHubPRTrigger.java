@@ -319,7 +319,7 @@ public class GitHubPRTrigger extends Trigger<Job<?, ?>> {
         List<GitHubPRCause> causes;
 
         try (LoggingTaskListenerWrapper listener =
-                     new LoggingTaskListenerWrapper(getPollingLogAction().getLogFile(), UTF_8)) {
+                     new LoggingTaskListenerWrapper(getPollingLogAction().getPollingLogFile(), UTF_8)) {
             long startTime = System.currentTimeMillis();
             listener.debug("Running GitHub Pull Request trigger check for {} on {}",
                     getDateTimeInstance().format(new Date(startTime)), localRepository.getFullName());

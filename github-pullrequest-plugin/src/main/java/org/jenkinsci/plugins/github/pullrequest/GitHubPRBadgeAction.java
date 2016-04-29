@@ -1,11 +1,12 @@
 package org.jenkinsci.plugins.github.pullrequest;
 
+import hudson.matrix.MatrixChildAction;
 import hudson.model.BuildBadgeAction;
 
 /**
  * @author Kanstantsin Shautsou
  */
-public class GitHubPRBadgeAction implements BuildBadgeAction {
+public class GitHubPRBadgeAction implements BuildBadgeAction, MatrixChildAction {
     private final String htmlUrl;
     private final String title;
     private final int number;

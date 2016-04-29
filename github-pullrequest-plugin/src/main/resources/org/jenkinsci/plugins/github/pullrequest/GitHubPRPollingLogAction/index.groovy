@@ -9,17 +9,24 @@ def t = namespace("/lib/hudson")
 def st = namespace("jelly:stapler");
 def j = namespace("jelly:core");
 
+def context = my.job ? my.job : my.run
+
 l.layout(title: my.displayName) {
-    st.include(page: "sidepanel", it: my.project)
+    st.include(page: "sidepanel", it: context)
     l.main_panel() {
         h1(my.displayName);
 //        h4("Polling log of last attempt of build.")
-        def log = my.log;
-        if (log) {
-            j
+        l.rightspace() {
+            a(href: "pollingLog"){
+                l.icon(class: "icon-document icon-md")
+                text("View as plain text")
+            }
+        }
+
+        if (my.logExists) {
             pre() {
                 j.whitespace() {
-                    my.writeLogTo(output);
+                    my.writePollingLogTo(output);
                 }
             }
         } else {
