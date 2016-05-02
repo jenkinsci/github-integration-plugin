@@ -116,6 +116,7 @@ public class GitHubPRCause extends Cause {
         this.state = state;
     }
 
+
     public static GitHubPRCause newGitHubPRCause() {
         return new GitHubPRCause();
     }
