@@ -73,8 +73,13 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
             StringBuilder sb = new StringBuilder();
             sb.append("Jenkins queued the run (").append(cause.getReason()).append(")");
 
-            if (trigger.isCancelQueued() && cancelQueuedBuildByPrNumber(cause.getNumber())) {
-                sb.append(". Queued builds aborted");
+            if (trigger.isCancelQueued()) {
+                int i = cancelQueuedBuildByPrNumber(cause.getNumber());
+                if (i > 0) {
+                    sb.append(". ");
+                    sb.append(i);
+                    sb.append(" queued builds aborted");
+                }
             }
 
             QueueTaskFuture<?> queueTaskFuture = startJob(cause);
@@ -115,23 +120,28 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
     /**
      * Cancel previous builds for specified PR id.
      */
-    protected static boolean cancelQueuedBuildByPrNumber(final int id) {
+    protected int cancelQueuedBuildByPrNumber(final int id) {
         Queue queue = getJenkinsInstance().getQueue();
 
-        for (Queue.Item item : queue.getApproximateItemsQuickly()) {
-            Optional<Cause> cause = from(item.getAllActions())
-                    .filter(instanceOf(CauseAction.class))
-                    .transformAndConcat(new CausesFromAction())
-                    .filter(instanceOf(GitHubPRCause.class))
-                    .firstMatch(new CauseHasPRNum(id));
+        int canceled = 0;
+        for (Queue.Item item : queue.getItems()) {
+//            final Job<?, ?> itemTask = (Job<?, ?>) item.task;
+            if (item.task.getFullDisplayName().equals(job.getFullDisplayName())) {
 
-            if (cause.isPresent()) {
-                queue.cancel(item);
-                return true;
+                Optional<Cause> cause = from(item.getAllActions())
+                        .filter(instanceOf(CauseAction.class))
+                        .transformAndConcat(new CausesFromAction())
+                        .filter(instanceOf(GitHubPRCause.class))
+                        .firstMatch(new CauseHasPRNum(id));
+
+                if (cause.isPresent()) {
+                    queue.cancel(item);
+                    canceled++;
+                }
             }
         }
 
-        return false;
+        return canceled;
     }
 
     private QueueTaskFuture<?> startJob(GitHubPRCause cause) {
