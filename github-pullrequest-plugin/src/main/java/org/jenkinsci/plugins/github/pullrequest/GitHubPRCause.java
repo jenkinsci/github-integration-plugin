@@ -107,7 +107,7 @@ public class GitHubPRCause extends Cause {
 
         this.condRef = mergeable ? "merge" : "head";
     }
-    
+
     public static GitHubPRCause newGitHubPRCause() {
         return new GitHubPRCause();
     }
