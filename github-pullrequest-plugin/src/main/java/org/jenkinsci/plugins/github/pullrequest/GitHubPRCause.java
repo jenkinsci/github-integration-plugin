@@ -51,10 +51,6 @@ public class GitHubPRCause extends Cause {
     public GitHubPRCause() {
     }
 
-    public static GitHubPRCause newGitHubPRCause() {
-        return new GitHubPRCause();
-    }
-
     public GitHubPRCause(GHPullRequest remotePr,
                          String reason,
                          boolean skip) throws IOException {
@@ -110,6 +106,10 @@ public class GitHubPRCause extends Cause {
         }
 
         this.condRef = mergeable ? "merge" : "head";
+    }
+    
+    public static GitHubPRCause newGitHubPRCause() {
+        return new GitHubPRCause();
     }
 
     /**
