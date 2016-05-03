@@ -119,7 +119,7 @@ public class GHRule implements TestRule {
         }
     }
 
-    @Before
+
     public void before(Description description) throws IOException, GitAPIException, URISyntaxException, InterruptedException {
         String repoName = description.getClassName() + "-" + description.getMethodName();
         assertThat("Specify GH_TOKEN variable", GH_TOKEN, notNullValue());

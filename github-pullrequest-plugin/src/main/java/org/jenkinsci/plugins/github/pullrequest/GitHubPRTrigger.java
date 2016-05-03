@@ -25,6 +25,7 @@ import org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRBranchRestr
 import org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRUserRestriction;
 import org.jenkinsci.plugins.github.pullrequest.trigger.JobRunnerForCause;
 import org.jenkinsci.plugins.github.pullrequest.utils.LoggingTaskListenerWrapper;
+import org.jenkinsci.plugins.github_integration.generic.GitHubAbstractTrigger;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.github.GHIssueState;
@@ -99,7 +100,7 @@ import static org.jenkinsci.plugins.github.util.JobInfoHelpers.isBuildable;
  *
  * @author Kanstantsin Shautsou
  */
-public class GitHubPRTrigger extends Trigger<Job<?, ?>> {
+public class GitHubPRTrigger extends GitHubAbstractTrigger {
     private static final Logger LOGGER = LoggerFactory.getLogger(GitHubPRTrigger.class);
     public static final String FINISH_MSG = "Finished GitHub Pull Request trigger check";
 

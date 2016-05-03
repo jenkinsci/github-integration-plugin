@@ -4,6 +4,7 @@ import hudson.matrix.MatrixBuild;
 import hudson.matrix.MatrixConfiguration;
 import hudson.matrix.MatrixRun;
 import hudson.model.Executor;
+import hudson.model.Cause;
 import hudson.model.Job;
 import hudson.model.Result;
 import hudson.model.Run;
@@ -64,22 +65,26 @@ public class JobHelper {
         return null;
     }
 
+    @CheckForNull
+    public static GitHubPRCause ghPRCauseFromRun(Run<?, ?> run) {
+        return ghCauseFromRun(run, GitHubPRCause.class);
+    }
+
     /**
      * matrix-project requires special extraction.
      */
     @CheckForNull
-    public static GitHubPRCause ghPRCauseFromRun(Run<?, ?> run) {
-        GitHubPRCause cause = null;
+    public static <T extends Cause> T ghCauseFromRun(Run<?, ?> run, Class<T> tClass) {
         if (run instanceof MatrixRun) {
             MatrixBuild parentBuild = ((MatrixRun) run).getParentBuild();
             if (nonNull(parentBuild)) {
-                cause = parentBuild.getCause(GitHubPRCause.class);
+                return parentBuild.getCause(tClass);
             }
         } else {
-            cause = run.getCause(GitHubPRCause.class);
+            return run.getCause(tClass);
         }
 
-        return cause;
+        return null;
     }
 
     public static Result getInterruptStatus(Executor executor) throws IllegalAccessException {

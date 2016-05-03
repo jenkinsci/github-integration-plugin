@@ -1,14 +1,24 @@
 package org.jenkinsci.plugins.github_integration.branch;
 
 import hudson.model.Job;
-import org.jenkinsci.plugins.github.pullrequest.GitHubPRPollingLogAction;
+import hudson.model.Run;
+import org.jenkinsci.plugins.github_integration.generic.GitHubAbstractPollingLogAction;
 
 /**
  * @author Kanstantsin Shautsou
  */
-public class GitHubBranchPollingLogAction extends GitHubPRPollingLogAction {
-    public GitHubBranchPollingLogAction(Job<?, ?> project) {
-        super(project);
+public class GitHubBranchPollingLogAction extends GitHubAbstractPollingLogAction {
+    public GitHubBranchPollingLogAction(Job<?, ?> job) {
+        super(job);
+    }
+
+    public GitHubBranchPollingLogAction(Run run) {
+        super(run);
+    }
+
+    @Override
+    public String getIconFileName() {
+        return "clipboard.png";
     }
 
     @Override

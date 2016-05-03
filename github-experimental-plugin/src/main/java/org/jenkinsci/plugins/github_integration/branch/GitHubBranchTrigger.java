@@ -21,6 +21,7 @@ import org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRBranchRestr
 import org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRUserRestriction;
 import org.jenkinsci.plugins.github.pullrequest.utils.LoggingTaskListenerWrapper;
 import org.jenkinsci.plugins.github_integration.branch.trigger.JobRunnerForCause;
+import org.jenkinsci.plugins.github_integration.generic.GitHubAbstractTrigger;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.github.GHBranch;
@@ -68,7 +69,7 @@ import static org.jenkinsci.plugins.github_integration.branch.trigger.check.Skip
 /**
  * @author Kanstantsin Shautsou
  */
-public class GitHubBranchTrigger extends Trigger<Job<?, ?>> {
+public class GitHubBranchTrigger extends GitHubAbstractTrigger {
     private static final Logger LOGGER = LoggerFactory.getLogger(GitHubBranchTrigger.class);
     public static final String FINISH_MSG = "Finished GitHub Push trigger check";
 
@@ -98,10 +99,8 @@ public class GitHubBranchTrigger extends Trigger<Job<?, ?>> {
     public GitHubBranchTrigger() {
     }
 
-
     @DataBoundConstructor
-    public GitHubBranchTrigger(String spec,
-                               GitHubPRTriggerMode triggerMode) throws ANTLRException {
+    public GitHubBranchTrigger(String spec, GitHubPRTriggerMode triggerMode) throws ANTLRException {
         super(spec);
         this.triggerMode = triggerMode;
     }
@@ -279,7 +278,7 @@ public class GitHubBranchTrigger extends Trigger<Job<?, ?>> {
         List<GitHubBranchCause> causes;
 
         try (LoggingTaskListenerWrapper listener =
-                     new LoggingTaskListenerWrapper(getPollingLogAction().getLogFile(), UTF_8)) {
+                     new LoggingTaskListenerWrapper(getPollingLogAction().getPollingLogFile(), UTF_8)) {
             long startTime = System.currentTimeMillis();
             listener.debug("Running GitHub Pull Request trigger check for {} on {}",
                     getDateTimeInstance().format(new Date(startTime)), localRepository.getFullName());

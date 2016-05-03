@@ -51,7 +51,7 @@ public class JobRunnerForCause implements Predicate<GitHubBranchCause> {
     @Override
     public boolean apply(GitHubBranchCause cause) {
         try {
-            cause.setPollingLog(trigger.getPollingLogAction().getLogFile());
+            cause.setPollingLog(trigger.getPollingLogAction().getPollingLogFile());
 
             StringBuilder sb = new StringBuilder();
             sb.append("Jenkins queued the run (").append(cause.getReason()).append(")");

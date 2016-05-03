@@ -7,7 +7,6 @@ import hudson.XmlFile;
 import hudson.model.Action;
 import hudson.model.Job;
 import jenkins.model.TransientActionFactory;
-import org.jenkinsci.plugins.github.util.JobInfoHelpers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +19,7 @@ import java.util.HashMap;
 
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 import static org.jenkinsci.plugins.github.pullrequest.utils.PRHelperFunctions.asFullRepoName;
+import static org.jenkinsci.plugins.github_integration.branch.utils.JobHelper.ghBranchTriggerFromJob;
 
 /**
  * @author Kanstantsin Shautsou
@@ -32,7 +32,7 @@ public class GitHubBranchRepositoryFactory extends TransientActionFactory<Job> {
     @Override
     public Collection<? extends Action> createFor(@Nonnull Job job) {
         try {
-            if (nonNull(JobInfoHelpers.triggerFrom(job, GitHubBranchTrigger.class))) {
+            if (nonNull(ghBranchTriggerFromJob(job))) {
                 return Collections.singleton(forProject(job));
             }
         } catch (Exception ex) {
@@ -47,7 +47,7 @@ public class GitHubBranchRepositoryFactory extends TransientActionFactory<Job> {
     private static GitHubBranchRepository forProject(Job<?, ?> job) {
         XmlFile configFile = new XmlFile(new File(job.getRootDir(), GitHubBranchRepository.FILE));
 
-        GitHubBranchTrigger trigger = JobInfoHelpers.triggerFrom(job, GitHubBranchTrigger.class);
+        GitHubBranchTrigger trigger = ghBranchTriggerFromJob(job);
         GitHubRepositoryName repo = trigger.getRepoFullName(job);
 
         GithubProjectProperty property = job.getProperty(GithubProjectProperty.class);

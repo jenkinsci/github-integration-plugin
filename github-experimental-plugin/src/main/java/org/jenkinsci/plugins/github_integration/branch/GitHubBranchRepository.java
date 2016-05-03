@@ -7,6 +7,7 @@ import hudson.model.Action;
 import hudson.model.Job;
 import hudson.model.Saveable;
 import hudson.model.listeners.SaveableListener;
+import org.jenkinsci.plugins.github_integration.generic.GitHubAbstractRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +17,7 @@ import java.util.Map;
 /**
  * @author Kanstantsin Shautsou
  */
-public class GitHubBranchRepository implements Action, Saveable {
+public class GitHubBranchRepository extends GitHubAbstractRepository {
     /**
      * Store constantly changing information in job directory with .runtime.xml tail
      */
