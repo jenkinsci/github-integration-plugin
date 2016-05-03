@@ -40,6 +40,7 @@ public class JobRunnerForCauseTest {
         return jobMixIn.scheduleBuild2(queuetPeriod, new CauseAction(cause), parametersAction);
     }
 
+
     public void configRoundTripUnsecure(Job job) throws Exception {
         final AuthorizationStrategy before = j.getInstance().getAuthorizationStrategy();
 
