@@ -171,12 +171,11 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
                 final SubTask parent = executable.getParent();
 
 
-                if (executable instanceof Run &&
-                        parent instanceof Job &&
+                if (executable instanceof Run && parent instanceof Job &&
                         (
                                 (Job) parent).getFullName().equals(job.getFullName())
 //                        && (executable instanceof WorkflowRun || executable instanceof MatrixRun)
-                        ) {
+                   ) {
                     final Run executableRun = (Run) executable;
                     if (executableRun.getResult() == Result.ABORTED) {
                         continue;
