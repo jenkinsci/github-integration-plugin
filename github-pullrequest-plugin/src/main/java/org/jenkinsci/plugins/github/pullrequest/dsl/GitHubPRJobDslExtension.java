@@ -26,6 +26,7 @@ public class GitHubPRJobDslExtension extends ContextExtensionPoint {
         GitHubPRTrigger trigger = new GitHubPRTrigger(context.cron(), context.mode(), context.events());
         trigger.setPreStatus(context.isSetPreStatus());
         trigger.setCancelQueued(context.isCancelQueued());
+        trigger.setAbortRunning(context.isAbortRunning());
         return trigger;
     }
 

@@ -17,6 +17,7 @@ public class GitHubPRTriggerDslContext implements Context {
     private GitHubPRTriggerMode mode = GitHubPRTriggerMode.CRON;
     private boolean setPreStatus;
     private boolean cancelQueued;
+    private boolean abortRunning;
     private List<GitHubPREvent> events = new ArrayList<>();
 
     public void cron(String cron) {
@@ -36,6 +37,10 @@ public class GitHubPRTriggerDslContext implements Context {
 
     public void cancelQueued() {
         cancelQueued = true;
+    }
+
+    public void abortRunning() {
+        abortRunning = true;
     }
 
     public void events(Runnable closure) {
@@ -61,6 +66,9 @@ public class GitHubPRTriggerDslContext implements Context {
         return cancelQueued;
     }
 
+    public boolean isAbortRunning() {
+        return abortRunning;
+    }
 
     public List<GitHubPREvent> events() {
         return events;
