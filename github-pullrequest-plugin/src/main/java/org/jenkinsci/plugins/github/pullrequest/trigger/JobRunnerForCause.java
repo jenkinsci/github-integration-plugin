@@ -175,7 +175,7 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
                         (
                                 (Job) parent).getFullName().equals(job.getFullName())
 //                        && (executable instanceof WorkflowRun || executable instanceof MatrixRun)
-                   ) {
+                    ) {
                     final Run executableRun = (Run) executable;
                     if (executableRun.getResult() == Result.ABORTED) {
                         continue;
