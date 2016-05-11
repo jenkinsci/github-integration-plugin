@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.github.pullrequest.trigger;
 
+import com.google.common.base.Throwables;
 import hudson.Launcher;
 import hudson.matrix.AxisList;
 import hudson.matrix.MatrixProject;
@@ -335,8 +336,12 @@ public class JobRunnerForCauseTest {
         ACL.impersonate(Jenkins.ANONYMOUS, new Runnable() {
             @Override
             public void run() {
-                assertThat("Should abort job1 -> number 10", job1RunnerForCause.abortRunning(10), is(2));
-                assertThat("Should not abort more job1 -> number 10", job1RunnerForCause.abortRunning(10), is(0));
+                try {
+                    assertThat("Should abort job1 -> number 10", job1RunnerForCause.abortRunning(10), is(2));
+                    assertThat("Should not abort more job1 -> number 10", job1RunnerForCause.abortRunning(10), is(0));
+                } catch (IllegalAccessException e) {
+                    Throwables.propagate(e);
+                }
             }
         });
 
@@ -345,8 +350,12 @@ public class JobRunnerForCauseTest {
         ACL.impersonate(Jenkins.ANONYMOUS, new Runnable() {
             @Override
             public void run() {
-                assertThat("Should abort job2 -> number 10", job2RunnerForCause.abortRunning(10), is(1));
-                assertThat("Should not abort more job2 -> number 10", job2RunnerForCause.abortRunning(10), is(0));
+                try {
+                    assertThat("Should abort job2 -> number 10", job2RunnerForCause.abortRunning(10), is(1));
+                    assertThat("Should not abort more job2 -> number 10", job2RunnerForCause.abortRunning(10), is(0));
+                } catch (IllegalAccessException e) {
+                    Throwables.propagate(e);
+                }
             }
         });
 
@@ -355,8 +364,12 @@ public class JobRunnerForCauseTest {
         ACL.impersonate(Jenkins.ANONYMOUS, new Runnable() {
             @Override
             public void run() {
-                assertThat("Should abort job3 -> number 10", job3RunnerForCause.abortRunning(10), is(1));
-                assertThat("Should not abort more job3 -> number 10", job3RunnerForCause.abortRunning(10), is(0));
+                try {
+                    assertThat("Should abort job3 -> number 10", job3RunnerForCause.abortRunning(10), is(1));
+                    assertThat("Should not abort more job3 -> number 10", job3RunnerForCause.abortRunning(10), is(0));
+                } catch (IllegalAccessException e) {
+                    Throwables.propagate(e);
+                }
             }
         });
 
@@ -365,8 +378,12 @@ public class JobRunnerForCauseTest {
         ACL.impersonate(Jenkins.ANONYMOUS, new Runnable() {
             @Override
             public void run() {
-                assertThat("Should abort job1 -> number 12", job1RunnerForCause.abortRunning(12), is(1));
-                assertThat("Should not abort more job1 -> number 12", job1RunnerForCause.abortRunning(12), is(0));
+                try {
+                    assertThat("Should abort job1 -> number 12", job1RunnerForCause.abortRunning(12), is(1));
+                    assertThat("Should not abort more job1 -> number 12", job1RunnerForCause.abortRunning(12), is(0));
+                } catch (IllegalAccessException e) {
+                    Throwables.propagate(e);
+                }
             }
         });
 
