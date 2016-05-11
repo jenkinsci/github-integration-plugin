@@ -7,6 +7,7 @@
         </encoder>
     </appender>
 
+    <logger name="hudson.model.Executor" level="DEBUG"/>
     <logger name="org.jenkinsci.plugins.github" level="DEBUG"/>
     <logger name="org.jenkinsci.plugins.github_integration" level="DEBUG"/>
     <logger name="org.mortbay.log" level="INFO"/>

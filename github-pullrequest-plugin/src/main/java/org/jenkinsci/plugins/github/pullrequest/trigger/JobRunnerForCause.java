@@ -5,6 +5,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import hudson.matrix.MatrixConfiguration;
 import hudson.matrix.MatrixProject;
+import hudson.matrix.MatrixRun;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
@@ -159,55 +160,37 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
             executors.addAll(computer.getOneOffExecutors());
 
             for (Executor executor : executors) {
-                if (isNull(executor)) {
-                    continue;
-                }
-
-                if (!executor.isBusy()) {
+                if (isNull(executor) || !executor.isBusy() || nonNull(executor.getCauseOfDeath()) ||
+                        !executor.getCausesOfInterruption().isEmpty()) {
                     continue;
                 }
 
                 Queue.Executable executable = executor.getCurrentExecutable();
                 final SubTask parent = executable.getParent();
 
-                if (executable instanceof WorkflowRun) {
-                    // we want interrupt parent run
-                    continue;
-                } else if (executable instanceof WorkflowJob) {
-                    final WorkflowJob workflowJob = (WorkflowJob) parent;
-                } else if (executable instanceof Run) {
+
+                if (executable instanceof Run &&
+                        parent instanceof Job &&
+                        (
+                                (Job) parent).getFullName().equals(job.getFullName())
+//                        && (executable instanceof WorkflowRun || executable instanceof MatrixRun)
+                        ) {
                     final Run executableRun = (Run) executable;
                     if (executableRun.getResult() == Result.ABORTED) {
                         continue;
                     }
 
-
-                    if (parent instanceof Job && ((Job) parent).getFullName().equals(job.getFullName())) {
-                        if (parent instanceof WorkflowJob) {
-
-                        } else if (parent instanceof MatrixConfiguration) {
-
-                        } else {
-                            final GitHubPRCause causeAction = (GitHubPRCause) executableRun.getCause(GitHubPRCause.class);
-                            if (nonNull(causeAction) && causeAction.getNumber() == number) {
-                                LOGGER.info("Aborting {}", executableRun);
-                                executor.interrupt(Result.ABORTED, new CauseOfInterruption() {
-                                    @Override
-                                    public String getShortDescription() {
-                                        return "Newer PR will be scheduled.";
-                                    }
-                                });
-                                aborted++;
+                    final GitHubPRCause causeAction = (GitHubPRCause) executableRun.getCause(GitHubPRCause.class);
+                    if (nonNull(causeAction) && causeAction.getNumber() == number) {
+                        LOGGER.info("Aborting {}", executableRun);
+                        executor.interrupt(Result.ABORTED, new CauseOfInterruption() {
+                            @Override
+                            public String getShortDescription() {
+                                return "Newer PR will be scheduled.";
                             }
-                        }
+                        });
+                        aborted++;
                     }
-
-
-//                    Queue.Task task = executor.getCurrentWorkUnit().work.getOwnerTask();
-//                    if (task instanceof Job) {
-//                        Job<?, ?> jobTask = (Job<?, ?>) task;
-//
-//                    }
                 }
             }
         }

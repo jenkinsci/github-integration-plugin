@@ -1,7 +1,9 @@
 package org.jenkinsci.plugins.github.pullrequest.trigger;
 
 import hudson.Launcher;
+import hudson.matrix.AxisList;
 import hudson.matrix.MatrixProject;
+import hudson.matrix.TextAxis;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.model.CauseAction;
@@ -216,22 +218,22 @@ public class JobRunnerForCauseTest {
 
         MockFolder folder = j.createFolder("folder");
 
-        WorkflowJob job1 = folder.createProject(WorkflowJob.class, "project1");
-        job1.setDisplayName("project1 display name");
+        WorkflowJob job1 = folder.createProject(WorkflowJob.class, "job1");
+        job1.setDisplayName("Job 1 display name");
         job1.setConcurrentBuild(true);
         job1.setDefinition(new SleepFlow());
         configRoundTripUnsecure(job1);
         job1.save();
 
-        WorkflowJob job2 = folder.createProject(WorkflowJob.class, "project2");
-        job2.setDisplayName("project1 display name");
+        WorkflowJob job2 = folder.createProject(WorkflowJob.class, "job2");
+        job2.setDisplayName("Job 2 display name");
         job2.setConcurrentBuild(true);
         job2.setDefinition(new SleepFlow());
         configRoundTripUnsecure(job2);
         job2.save();
 
-        WorkflowJob job3 = folder.createProject(WorkflowJob.class, "project3");
-        job3.setDisplayName("project1 display name");
+        WorkflowJob job3 = folder.createProject(WorkflowJob.class, "job3");
+        job3.setDisplayName("Job 3 display name");
         job3.setConcurrentBuild(true);
         job3.setDefinition(new SleepFlow());
         configRoundTripUnsecure(job3);
@@ -240,10 +242,58 @@ public class JobRunnerForCauseTest {
         testAbortRunning(job1, job2, job3);
     }
 
+    @Test
+    public void testAbortRunningMatrixProject() throws Exception {
+
+        MockFolder folder = j.createFolder("folder");
+
+        MatrixProject job1 = folder.createProject(MatrixProject.class, "project1");
+        job1.setDisplayName("project1 display name");
+        job1.setConcurrentBuild(true);
+        job1.getBuildersList().add(new SleepBuilder());
+        job1.setAxes(
+                new AxisList(
+                        new TextAxis("first_axis", "first_value1"),
+                        new TextAxis("second_axis", "sec_value1")
+                )
+        );
+        configRoundTripUnsecure(job1);
+        job1.save();
+
+        MatrixProject job2 = folder.createProject(MatrixProject.class, "project2");
+        job2.setDisplayName("project1 display name");
+        job2.setConcurrentBuild(true);
+        job2.getBuildersList().add(new SleepBuilder());
+        job2.setAxes(
+                new AxisList(
+                        new TextAxis("first_axis", "first_value1"),
+                        new TextAxis("second_axis", "sec_value1")
+                )
+        );
+        configRoundTripUnsecure(job2);
+        job2.save();
+
+        MatrixProject job3 = folder.createProject(MatrixProject.class, "project3");
+        job3.setDisplayName("project1 display name");
+        job3.setConcurrentBuild(true);
+        job3.getBuildersList().add(new SleepBuilder());
+        job3.setAxes(
+                new AxisList(
+                        new TextAxis("first_axis", "first_value1"),
+                        new TextAxis("second_axis", "sec_value1")
+                )
+        );
+        configRoundTripUnsecure(job3);
+        job3.save();
+
+        testAbortRunning(job1, job2, job3);
+    }
+
+
     private <T extends TopLevelItem> void testAbortRunning(Job<?, ?> job1, Job<?, ?> job2, Job<?, ?> job3) throws Exception {
         Jenkins jenkins = j.getInstance();
 
-        jenkins.setNumExecutors(7);
+        jenkins.setNumExecutors(10);
         jenkins.save();
 
         jenkins.setSecurityRealm(j.createDummySecurityRealm());
@@ -278,9 +328,9 @@ public class JobRunnerForCauseTest {
         gitHubPRTrigger3.start(job3, true); // to have working polling log files
         final JobRunnerForCause job3RunnerForCause = new JobRunnerForCause(job3, gitHubPRTrigger3);
 
-        Thread.sleep(1000);
+        Thread.sleep(2000);
 
-        assertThat(jenkins.getQueue().getItems(), Matchers.<Queue.Item>emptyArray());
+        assertThat("All runs should go to executors", jenkins.getQueue().getItems(), Matchers.<Queue.Item>emptyArray());
 
         ACL.impersonate(Jenkins.ANONYMOUS, new Runnable() {
             @Override
