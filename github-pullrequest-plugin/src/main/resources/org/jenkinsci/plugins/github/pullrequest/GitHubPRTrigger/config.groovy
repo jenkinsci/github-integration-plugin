@@ -31,6 +31,10 @@ f.block {
             f.checkbox()
         }
 
+        f.entry(title: "Abort running builds", field: "abortRunning") {
+            f.checkbox()
+        }
+
         f.entry(title: "Skip older PRs on first run", field: "skipFirstRun") {
             f.checkbox()
         }
