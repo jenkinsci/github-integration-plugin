@@ -5,9 +5,6 @@ import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import hudson.matrix.MatrixConfiguration;
 import hudson.matrix.MatrixProject;
-import hudson.matrix.MatrixRun;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.Cause;
 import hudson.model.CauseAction;
@@ -24,7 +21,6 @@ import hudson.model.Run;
 import hudson.model.queue.QueueTaskFuture;
 import hudson.model.queue.SubTask;
 import hudson.security.ACL;
-import javaposse.jobdsl.dsl.jobs.WorkflowJob;
 import jenkins.model.CauseOfInterruption;
 import jenkins.model.ParameterizedJobMixIn;
 import org.acegisecurity.context.SecurityContext;
@@ -34,7 +30,6 @@ import org.jenkinsci.plugins.github.pullrequest.GitHubPRBadgeAction;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRCause;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
 import org.jenkinsci.plugins.github.pullrequest.utils.JobHelper;
-import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.kohsuke.github.GHCommitState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,10 +58,13 @@ import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.TITLE;
 import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.TRIGGER_SENDER_AUTHOR;
 import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.TRIGGER_SENDER_EMAIL;
 import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.URL;
+import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.getInterruptCauses;
+import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.getInterruptStatus;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 import static org.jenkinsci.plugins.github.util.FluentIterableWrapper.from;
 import static org.jenkinsci.plugins.github.util.JobInfoHelpers.asParameterizedJobMixIn;
+
 
 /**
  * @author lanwen (Merkushev Kirill)
@@ -102,7 +100,12 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
             }
 
             if (trigger.isAbortRunning()) {
-                final int i = abortRunning(cause.getNumber());
+                int i = 0;
+                try {
+                    i = abortRunning(cause.getNumber());
+                } catch (IllegalAccessException e) {
+                    LOGGER.error("Can't abort runs/builds for {}", job.getFullName(), e);
+                }
                 if (i > 0) {
                     sb.append(". ");
                     sb.append(i);
@@ -147,7 +150,7 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
         return true;
     }
 
-    public synchronized int abortRunning(int number) {
+    public synchronized int abortRunning(int number) throws IllegalAccessException {
         int aborted = 0;
 
         Computer[] computers = getJenkinsInstance().getComputers();
@@ -161,7 +164,7 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
 
             for (Executor executor : executors) {
                 if (isNull(executor) || !executor.isBusy() || nonNull(executor.getCauseOfDeath()) ||
-                        !executor.getCausesOfInterruption().isEmpty()) {
+                        !getInterruptCauses(executor).isEmpty() || getInterruptStatus(executor) == Result.ABORTED) {
                     continue;
                 }
 
