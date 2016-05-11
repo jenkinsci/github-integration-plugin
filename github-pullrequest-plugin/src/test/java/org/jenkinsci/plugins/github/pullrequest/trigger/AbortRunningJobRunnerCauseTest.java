@@ -11,6 +11,7 @@ import hudson.model.TopLevelItem;
 import hudson.security.ACL;
 import hudson.security.GlobalMatrixAuthorizationStrategy;
 import jenkins.model.Jenkins;
+import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsArrayWithSize;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
@@ -19,6 +20,11 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.junit.Test;
 import org.jvnet.hudson.test.MockFolder;
 
+import java.util.concurrent.TimeUnit;
+
+import static com.jayway.awaitility.Awaitility.await;
+import static java.util.Collections.emptyList;
+import static org.hamcrest.collection.IsArrayWithSize.emptyArray;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
@@ -132,7 +138,7 @@ public class AbortRunningJobRunnerCauseTest extends JobRunnerForCauseTest {
     }
 
     public  <T extends TopLevelItem> void testAbortRunning(Job<?, ?> job1, Job<?, ?> job2, Job<?, ?> job3) throws Exception {
-        Jenkins jenkins = j.getInstance();
+        final Jenkins jenkins = j.getInstance();
 
         jenkins.setNumExecutors(10);
         jenkins.save();
@@ -169,7 +175,12 @@ public class AbortRunningJobRunnerCauseTest extends JobRunnerForCauseTest {
         gitHubPRTrigger3.start(job3, true); // to have working polling log files
         final JobRunnerForCause job3RunnerForCause = new JobRunnerForCause(job3, gitHubPRTrigger3);
 
-        Thread.sleep(2000);
+        await().timeout(50, TimeUnit.SECONDS).until(new Runnable() {
+            @Override
+            public void run() {
+                assertThat(jenkins.getQueue().getItems(), emptyArray());
+            }
+        });
 
         assertThat("All runs should go to executors", jenkins.getQueue().getItems(), Matchers.<Queue.Item>emptyArray());
 
