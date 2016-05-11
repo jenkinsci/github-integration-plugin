@@ -29,7 +29,6 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRBadgeAction;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRCause;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
-import org.jenkinsci.plugins.github.pullrequest.utils.JobHelper;
 import org.kohsuke.github.GHCommitState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
