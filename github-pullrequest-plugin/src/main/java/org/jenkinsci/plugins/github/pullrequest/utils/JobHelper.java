@@ -3,15 +3,21 @@ package org.jenkinsci.plugins.github.pullrequest.utils;
 import hudson.matrix.MatrixBuild;
 import hudson.matrix.MatrixConfiguration;
 import hudson.matrix.MatrixRun;
+import hudson.model.Executor;
 import hudson.model.Job;
+import hudson.model.Result;
 import hudson.model.Run;
 import hudson.triggers.Trigger;
+import jenkins.model.CauseOfInterruption;
 import jenkins.model.ParameterizedJobMixIn;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRCause;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
 import org.jenkinsci.plugins.github.util.JobInfoHelpers;
 
 import javax.annotation.CheckForNull;
+
+import java.util.List;
 
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 
@@ -34,6 +40,7 @@ public class JobHelper {
 
     /**
      * support matrix plugin.
+     *
      * @see JobInfoHelpers#triggerFrom(hudson.model.Job, java.lang.Class)
      */
     @CheckForNull
@@ -61,7 +68,7 @@ public class JobHelper {
      * matrix-project requires special extraction.
      */
     @CheckForNull
-    public static GitHubPRCause ghPRCauseFromRun(Run <?, ?> run) {
+    public static GitHubPRCause ghPRCauseFromRun(Run<?, ?> run) {
         GitHubPRCause cause = null;
         if (run instanceof MatrixRun) {
             MatrixBuild parentBuild = ((MatrixRun) run).getParentBuild();
@@ -73,5 +80,13 @@ public class JobHelper {
         }
 
         return cause;
+    }
+
+    public static Result getInterruptStatus(Executor executor) throws IllegalAccessException {
+        return (Result) FieldUtils.readField(executor, "interruptStatus", true);
+    }
+
+    public static List<CauseOfInterruption> getInterruptCauses(Executor executor) throws IllegalAccessException {
+        return (List<CauseOfInterruption>) FieldUtils.readField(executor, "causes", true);
     }
 }
