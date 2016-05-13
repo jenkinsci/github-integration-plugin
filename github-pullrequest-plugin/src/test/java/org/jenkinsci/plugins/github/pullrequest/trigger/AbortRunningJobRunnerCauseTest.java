@@ -2,16 +2,20 @@ package org.jenkinsci.plugins.github.pullrequest.trigger;
 
 import com.google.common.base.Throwables;
 import hudson.matrix.AxisList;
+import hudson.matrix.MatrixBuild;
 import hudson.matrix.MatrixProject;
+import hudson.matrix.MatrixRun;
 import hudson.matrix.TextAxis;
 import hudson.model.FreeStyleProject;
 import hudson.model.Job;
 import hudson.model.Queue;
+import hudson.model.Result;
+import hudson.model.Run;
 import hudson.model.TopLevelItem;
 import hudson.security.ACL;
 import hudson.security.GlobalMatrixAuthorizationStrategy;
+import hudson.util.RunList;
 import jenkins.model.Jenkins;
-import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsArrayWithSize;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
@@ -23,7 +27,9 @@ import org.jvnet.hudson.test.MockFolder;
 import java.util.concurrent.TimeUnit;
 
 import static com.jayway.awaitility.Awaitility.await;
-import static java.util.Collections.emptyList;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.collection.IsArrayWithSize.emptyArray;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -32,6 +38,7 @@ import static org.junit.Assert.assertThat;
  * @author Kanstantsin Shautsou
  */
 public class AbortRunningJobRunnerCauseTest extends JobRunnerForCauseTest {
+
     @Test
     public void testAbortRunningFreestyleProject() throws Exception {
 
@@ -135,9 +142,21 @@ public class AbortRunningJobRunnerCauseTest extends JobRunnerForCauseTest {
         job3.save();
 
         testAbortRunning(job1, job2, job3);
+
+        j.waitUntilNoActivityUpTo(1000);
+
+        assertThat(job1.getBuilds(), hasSize(3));
+
+        for (MatrixBuild matrixBuild : job1.getBuilds()) {
+            assertThat(matrixBuild.getResult(), is(Result.ABORTED));
+            assertThat(matrixBuild.getRuns(), not(empty()));
+            for (MatrixRun matrixRun : matrixBuild.getRuns()) {
+                assertThat(matrixRun.getResult(), is(Result.ABORTED));
+            }
+        }
     }
 
-    public  <T extends TopLevelItem> void testAbortRunning(Job<?, ?> job1, Job<?, ?> job2, Job<?, ?> job3) throws Exception {
+    public <T extends TopLevelItem> void testAbortRunning(Job<?, ?> job1, Job<?, ?> job2, Job<?, ?> job3) throws Exception {
         final Jenkins jenkins = j.getInstance();
 
         jenkins.setNumExecutors(10);
@@ -233,6 +252,11 @@ public class AbortRunningJobRunnerCauseTest extends JobRunnerForCauseTest {
         });
 
         assertThat(jenkins.getQueue().getItems(), IsArrayWithSize.<Queue.Item>emptyArray());
-    }
 
+        final RunList<?> run1List = job1.getBuilds();
+        assertThat(run1List, not(empty()));
+        for (Run run : run1List) {
+            assertThat(run.getResult(), is(Result.ABORTED));
+        }
+    }
 }
