@@ -112,6 +112,7 @@ public class GitHubPRTrigger extends Trigger<Job<?, ?>> {
      */
     private boolean preStatus = false;
     private boolean cancelQueued = false;
+    private boolean abortRunning = false;
     private boolean skipFirstRun = false;
     @CheckForNull
     private GitHubPRUserRestriction userRestriction;
@@ -152,6 +153,11 @@ public class GitHubPRTrigger extends Trigger<Job<?, ?>> {
     }
 
     @DataBoundSetter
+    public void setAbortRunning(boolean abortRunning) {
+        this.abortRunning = abortRunning;
+    }
+
+    @DataBoundSetter
     public void setSkipFirstRun(boolean skipFirstRun) {
         this.skipFirstRun = skipFirstRun;
     }
@@ -172,6 +178,10 @@ public class GitHubPRTrigger extends Trigger<Job<?, ?>> {
 
     public boolean isCancelQueued() {
         return cancelQueued;
+    }
+
+    public boolean isAbortRunning() {
+        return abortRunning;
     }
 
     public boolean isSkipFirstRun() {

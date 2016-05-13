@@ -8,13 +8,18 @@ import hudson.matrix.MatrixProject;
 import hudson.model.Action;
 import hudson.model.Cause;
 import hudson.model.CauseAction;
+import hudson.model.Computer;
+import hudson.model.Executor;
 import hudson.model.Job;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Queue;
+import hudson.model.Result;
+import hudson.model.Run;
 import hudson.model.queue.QueueTaskFuture;
+import hudson.model.queue.SubTask;
 import hudson.security.ACL;
 import jenkins.model.ParameterizedJobMixIn;
 import org.acegisecurity.context.SecurityContext;
@@ -51,9 +56,13 @@ import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.TITLE;
 import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.TRIGGER_SENDER_AUTHOR;
 import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.TRIGGER_SENDER_EMAIL;
 import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.URL;
+import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.getInterruptCauses;
+import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.getInterruptStatus;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
+import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 import static org.jenkinsci.plugins.github.util.FluentIterableWrapper.from;
 import static org.jenkinsci.plugins.github.util.JobInfoHelpers.asParameterizedJobMixIn;
+
 
 /**
  * @author lanwen (Merkushev Kirill)
@@ -85,6 +94,20 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
                     sb.append(". ");
                     sb.append(i);
                     sb.append(" queued builds/runs canceled.");
+                }
+            }
+
+            if (trigger.isAbortRunning()) {
+                int i = 0;
+                try {
+                    i = abortRunning(cause.getNumber());
+                } catch (IllegalAccessException e) {
+                    LOGGER.error("Can't abort runs/builds for {}", job.getFullName(), e);
+                }
+                if (i > 0) {
+                    sb.append(". ");
+                    sb.append(i);
+                    sb.append(" running builds/runs aborted.");
                 }
             }
 
@@ -123,6 +146,51 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
             SecurityContextHolder.setContext(old);
         }
         return true;
+    }
+
+    public synchronized int abortRunning(int number) throws IllegalAccessException {
+        int aborted = 0;
+
+        Computer[] computers = getJenkinsInstance().getComputers();
+        for (Computer computer : computers) {
+            if (isNull(computer)) {
+                continue;
+            }
+
+            List<Executor> executors = computer.getExecutors();
+            executors.addAll(computer.getOneOffExecutors());
+
+            for (Executor executor : executors) {
+                if (isNull(executor) || !executor.isBusy() || nonNull(executor.getCauseOfDeath()) ||
+                        !getInterruptCauses(executor).isEmpty() || getInterruptStatus(executor) == Result.ABORTED) {
+                    continue;
+                }
+
+                Queue.Executable executable = executor.getCurrentExecutable();
+                final SubTask parent = executable.getParent();
+
+
+                if (executable instanceof Run && parent instanceof Job &&
+                        (
+                                (Job) parent).getFullName().equals(job.getFullName())
+//                        && (executable instanceof WorkflowRun || executable instanceof MatrixRun)
+                    ) {
+                    final Run executableRun = (Run) executable;
+                    if (executableRun.getResult() == Result.ABORTED) {
+                        continue;
+                    }
+
+                    final GitHubPRCause causeAction = (GitHubPRCause) executableRun.getCause(GitHubPRCause.class);
+                    if (nonNull(causeAction) && causeAction.getNumber() == number) {
+                        LOGGER.info("Aborting {}", executableRun);
+                        executor.interrupt(Result.ABORTED, new NewPRInterruptCause());
+                        aborted++;
+                    }
+                }
+            }
+        }
+
+        return aborted;
     }
 
     /**
@@ -253,4 +321,5 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
             return ((GitHubPRCause) cause).getNumber() == id;
         }
     }
+
 }
