@@ -21,6 +21,8 @@ import org.jenkinsci.plugins.github.pullrequest.GitHubPRTriggerMode;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.junit.Test;
 import org.jvnet.hudson.test.MockFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
@@ -36,11 +38,12 @@ import static org.junit.Assert.assertThat;
  * @author Kanstantsin Shautsou
  */
 public class AbortRunningJobRunnerCauseTest extends JobRunnerForCauseTest {
+    private static final Logger LOG = LoggerFactory.getLogger(AbortRunningJobRunnerCauseTest.class);
 
     @Test
     public void testAbortRunningFreestyleProject() throws Exception {
 
-        MockFolder folder = j.createFolder("folder");
+        MockFolder folder = j.createFolder("freestyle_folder");
 
         FreeStyleProject job1 = folder.createProject(FreeStyleProject.class, "project1");
         job1.setDisplayName("project1 display name");
@@ -69,36 +72,37 @@ public class AbortRunningJobRunnerCauseTest extends JobRunnerForCauseTest {
     @Test
     public void testAbortRunningWorkflow() throws Exception {
 
-        MockFolder folder = j.createFolder("folder");
+        MockFolder folder = j.createFolder("workflow_folder");
 
         WorkflowJob job1 = folder.createProject(WorkflowJob.class, "job1");
-        job1.setDisplayName("Job 1 display name");
+        job1.setDisplayName("WorkflowJob 1 display name");
         job1.setConcurrentBuild(true);
         job1.setDefinition(new SleepFlow());
         configRoundTripUnsecure(job1);
         job1.save();
 
         WorkflowJob job2 = folder.createProject(WorkflowJob.class, "job2");
-        job2.setDisplayName("Job 2 display name");
+        job2.setDisplayName("WorkflowJob 2 display name");
         job2.setConcurrentBuild(true);
         job2.setDefinition(new SleepFlow());
         configRoundTripUnsecure(job2);
         job2.save();
 
         WorkflowJob job3 = folder.createProject(WorkflowJob.class, "job3");
-        job3.setDisplayName("Job 3 display name");
+        job3.setDisplayName("WorkflowJob 3 display name");
         job3.setConcurrentBuild(true);
         job3.setDefinition(new SleepFlow());
         configRoundTripUnsecure(job3);
         job3.save();
 
+        Thread.sleep(5 * 1000); // allow get jobs to executors
         testAbortRunning(job1, job2, job3);
     }
 
     @Test
     public void testAbortRunningMatrixProject() throws Exception {
 
-        MockFolder folder = j.createFolder("folder");
+        MockFolder folder = j.createFolder("Matrix_folder");
 
         MatrixProject job1 = folder.createProject(MatrixProject.class, "project1");
         job1.setDisplayName("project1 display name");
@@ -141,8 +145,6 @@ public class AbortRunningJobRunnerCauseTest extends JobRunnerForCauseTest {
 
         testAbortRunning(job1, job2, job3);
 
-        j.waitUntilNoActivityUpTo(100000);
-
         assertThat(job1.getBuilds(), hasSize(3));
 
         for (MatrixBuild matrixBuild : job1.getBuilds()) {
@@ -162,7 +164,7 @@ public class AbortRunningJobRunnerCauseTest extends JobRunnerForCauseTest {
 
         jenkins.setSecurityRealm(j.createDummySecurityRealm());
         GlobalMatrixAuthorizationStrategy matrixAuth = new GlobalMatrixAuthorizationStrategy();
-        matrixAuth.add(Jenkins.ADMINISTER, "User");
+        matrixAuth.add(Jenkins.ADMINISTER, "a");
         jenkins.setAuthorizationStrategy(matrixAuth);
         jenkins.save();
 
@@ -256,5 +258,6 @@ public class AbortRunningJobRunnerCauseTest extends JobRunnerForCauseTest {
 //        for (Run run : run1List) {
 //            assertThat(run.getResult(), is(Result.ABORTED));
 //        }
+        j.waitUntilNoActivity();
     }
 }
