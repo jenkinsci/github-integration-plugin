@@ -198,6 +198,7 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
                 final GitHubPRCause causeAction = (GitHubPRCause) executableRun.getCause(GitHubPRCause.class);
                 if (nonNull(causeAction) && causeAction.getNumber() == number) {
                     LOGGER.info("Aborting {}", executableRun);
+                    LOGGER.info("Aborting '{}', by interrupting '{}'", executableRun, executor);
                     executor.interrupt(Result.ABORTED, new NewPRInterruptCause());
                     aborted++;
                 }
