@@ -95,7 +95,7 @@ public class AbortRunningJobRunnerCauseTest extends JobRunnerForCauseTest {
         configRoundTripUnsecure(job3);
         job3.save();
 
-        Thread.sleep(5 * 1000); // allow get jobs to executors
+        Thread.sleep(15 * 1000); // allow get jobs to executors
         testAbortRunning(job1, job2, job3);
     }
 

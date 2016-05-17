@@ -194,10 +194,14 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
                     // the whole MatrixBuild will be aborted
                     continue;
                 }
+//                if (executable instanceof MatrixBuild) {
+//                    final MatrixBuild executable1 = (MatrixBuild) executable;
+//                    executable1.doStop()
+//                }
 
                 final GitHubPRCause causeAction = (GitHubPRCause) executableRun.getCause(GitHubPRCause.class);
                 if (nonNull(causeAction) && causeAction.getNumber() == number) {
-                    LOGGER.info("Aborting {}", executableRun);
+                    LOGGER.info("Aborting '{}', by interrupting '{}'", executableRun, executor);
                     executor.interrupt(Result.ABORTED, new NewPRInterruptCause());
                     aborted++;
                 }
