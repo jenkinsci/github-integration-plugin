@@ -3,6 +3,7 @@ package org.jenkinsci.plugins.github.pullrequest.trigger;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
+import hudson.matrix.MatrixBuild;
 import hudson.matrix.MatrixConfiguration;
 import hudson.matrix.MatrixProject;
 import hudson.matrix.MatrixRun;
@@ -194,10 +195,14 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
                     // the whole MatrixBuild will be aborted
                     continue;
                 }
+//                if (executable instanceof MatrixBuild) {
+//                    final MatrixBuild executable1 = (MatrixBuild) executable;
+//                    executable1.doStop()
+//                }
 
                 final GitHubPRCause causeAction = (GitHubPRCause) executableRun.getCause(GitHubPRCause.class);
                 if (nonNull(causeAction) && causeAction.getNumber() == number) {
-                    LOGGER.info("Aborting {}", executableRun);
+                    LOGGER.info("Aborting '{}', by interrupting '{}'", executableRun, executor);
                     executor.interrupt(Result.ABORTED, new NewPRInterruptCause());
                     aborted++;
                 }
