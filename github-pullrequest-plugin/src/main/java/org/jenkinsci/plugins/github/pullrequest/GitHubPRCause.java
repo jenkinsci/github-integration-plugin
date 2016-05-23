@@ -4,6 +4,10 @@ import hudson.model.Cause;
 import hudson.model.Run;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GHUser;
 import org.slf4j.Logger;
@@ -47,6 +51,7 @@ public class GitHubPRCause extends Cause {
     private boolean skip;
     private String condRef;
     private String pollingLog;
+    private String state;
 
     public GitHubPRCause() {
     }
@@ -65,7 +70,7 @@ public class GitHubPRCause extends Cause {
                 pr.isMergeable(), pr.getBaseRef(), pr.getHeadRef(),
                 pr.getUserEmail(), pr.getTitle(), pr.getHtmlUrl(), pr.getSourceRepoOwner(),
                 pr.getLabels(),
-                triggerSender, skip, reason, "", "");
+                triggerSender, skip, reason, "", "", pr.getState());
     }
 
     //FIXME (sizes) ParameterNumber: More than 7 parameters (found 15).
@@ -74,7 +79,8 @@ public class GitHubPRCause extends Cause {
                          String targetBranch, String sourceBranch, String prAuthorEmail,
                          String title, URL htmlUrl, String sourceRepoOwner, Set<String> labels,
                          GHUser triggerSender, boolean skip, String reason,
-                         String commitAuthorName, String commitAuthorEmail) {
+                         String commitAuthorName, String commitAuthorEmail,
+                         String state) {
     //CHECKSTYLE:ON
         this.headSha = headSha;
         this.number = number;
@@ -106,6 +112,8 @@ public class GitHubPRCause extends Cause {
         }
 
         this.condRef = mergeable ? "merge" : "head";
+
+        this.state = state;
     }
 
     public static GitHubPRCause newGitHubPRCause() {
@@ -229,6 +237,13 @@ public class GitHubPRCause extends Cause {
      */
     public GitHubPRCause withCommitAuthorEmail(String commitAuthorEmail) {
         this.commitAuthorEmail = commitAuthorEmail;
+        return this;
+    }
+    /**
+     * @see #state
+     */
+    public GitHubPRCause withState(String state) {
+        this.state = state;
         return this;
     }
 
@@ -355,6 +370,10 @@ public class GitHubPRCause extends Cause {
         return commitAuthorEmail;
     }
 
+    public String getState() {
+        return state;
+    }
+
     @Nonnull
     public String getCondRef() {
         return condRef;
@@ -368,86 +387,18 @@ public class GitHubPRCause extends Cause {
         this.pollingLog = FileUtils.readFileToString(logFile);
     }
 
-    //CHECKSTYLE:OFF
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        GitHubPRCause cause = (GitHubPRCause) o;
-
-        if (number != cause.number) return false;
-        if (mergeable != cause.mergeable) return false;
-        if (skip != cause.skip) return false;
-        if (headSha != null ? !headSha.equals(cause.headSha) : cause.headSha != null) return false;
-        if (targetBranch != null ? !targetBranch.equals(cause.targetBranch) : cause.targetBranch != null) return false;
-        if (sourceBranch != null ? !sourceBranch.equals(cause.sourceBranch) : cause.sourceBranch != null) return false;
-        if (prAuthorEmail != null ? !prAuthorEmail.equals(cause.prAuthorEmail) : cause.prAuthorEmail != null)
-            return false;
-        if (title != null ? !title.equals(cause.title) : cause.title != null) return false;
-        if (htmlUrl != null ? !htmlUrl.equals(cause.htmlUrl) : cause.htmlUrl != null) return false;
-        if (sourceRepoOwner != null ? !sourceRepoOwner.equals(cause.sourceRepoOwner) : cause.sourceRepoOwner != null)
-            return false;
-        if (triggerSenderName != null ? !triggerSenderName.equals(cause.triggerSenderName) : cause.triggerSenderName != null)
-            return false;
-        if (triggerSenderEmail != null ? !triggerSenderEmail.equals(cause.triggerSenderEmail) : cause.triggerSenderEmail != null)
-            return false;
-        if (labels != null ? !labels.equals(cause.labels) : cause.labels != null) return false;
-        if (reason != null ? !reason.equals(cause.reason) : cause.reason != null) return false;
-        if (commitAuthorName != null ? !commitAuthorName.equals(cause.commitAuthorName) : cause.commitAuthorName != null)
-            return false;
-        if (commitAuthorEmail != null ? !commitAuthorEmail.equals(cause.commitAuthorEmail) : cause.commitAuthorEmail != null)
-            return false;
-        if (condRef != null ? !condRef.equals(cause.condRef) : cause.condRef != null) return false;
-        return !(pollingLog != null ? !pollingLog.equals(cause.pollingLog) : cause.pollingLog != null);
-
+        return EqualsBuilder.reflectionEquals(this, o);
     }
 
     @Override
     public int hashCode() {
-        int result = headSha != null ? headSha.hashCode() : 0;
-        result = 31 * result + number;
-        result = 31 * result + (mergeable ? 1 : 0);
-        result = 31 * result + (targetBranch != null ? targetBranch.hashCode() : 0);
-        result = 31 * result + (sourceBranch != null ? sourceBranch.hashCode() : 0);
-        result = 31 * result + (prAuthorEmail != null ? prAuthorEmail.hashCode() : 0);
-        result = 31 * result + (title != null ? title.hashCode() : 0);
-        result = 31 * result + (htmlUrl != null ? htmlUrl.hashCode() : 0);
-        result = 31 * result + (sourceRepoOwner != null ? sourceRepoOwner.hashCode() : 0);
-        result = 31 * result + (triggerSenderName != null ? triggerSenderName.hashCode() : 0);
-        result = 31 * result + (triggerSenderEmail != null ? triggerSenderEmail.hashCode() : 0);
-        result = 31 * result + (labels != null ? labels.hashCode() : 0);
-        result = 31 * result + (reason != null ? reason.hashCode() : 0);
-        result = 31 * result + (commitAuthorName != null ? commitAuthorName.hashCode() : 0);
-        result = 31 * result + (commitAuthorEmail != null ? commitAuthorEmail.hashCode() : 0);
-        result = 31 * result + (skip ? 1 : 0);
-        result = 31 * result + (condRef != null ? condRef.hashCode() : 0);
-        result = 31 * result + (pollingLog != null ? pollingLog.hashCode() : 0);
-        return result;
+        return HashCodeBuilder.reflectionHashCode(this);
     }
-    //CHECKSTYLE:ON
 
     @Override
     public String toString() {
-        return "GitHubPRCause{" +
-                "headSha='" + headSha + '\'' +
-                ", number=" + number +
-                ", mergeable=" + mergeable +
-                ", targetBranch='" + targetBranch + '\'' +
-                ", sourceBranch='" + sourceBranch + '\'' +
-                ", prAuthorEmail='" + prAuthorEmail + '\'' +
-                ", title='" + title + '\'' +
-                ", htmlUrl=" + htmlUrl +
-                ", sourceRepoOwner='" + sourceRepoOwner + '\'' +
-                ", triggerSenderName='" + triggerSenderName + '\'' +
-                ", triggerSenderEmail='" + triggerSenderEmail + '\'' +
-                ", labels=" + labels +
-                ", reason='" + reason + '\'' +
-                ", commitAuthorName='" + commitAuthorName + '\'' +
-                ", commitAuthorEmail='" + commitAuthorEmail + '\'' +
-                ", skip=" + skip +
-                ", condRef='" + condRef + '\'' +
-                ", pollingLog='" + pollingLog + '\'' +
-                '}';
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 }

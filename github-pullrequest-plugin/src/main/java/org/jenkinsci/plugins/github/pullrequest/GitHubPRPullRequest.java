@@ -1,6 +1,8 @@
 package org.jenkinsci.plugins.github.pullrequest;
 
 import hudson.Functions;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.kohsuke.github.GHIssueComment;
 import org.kohsuke.github.GHLabel;
@@ -44,6 +46,7 @@ public class GitHubPRPullRequest {
     @CheckForNull
     private Date lastCommentCreatedAt;
     private String sourceRepoOwner;
+    private String state;
 
     /**
      * Save only what we need for next comparison
@@ -96,6 +99,7 @@ public class GitHubPRPullRequest {
         }
 
         sourceRepoOwner = remoteRepo.getOwnerName();
+        state = pr.getState().toString();
     }
 
     public int getNumber() {
@@ -158,6 +162,14 @@ public class GitHubPRPullRequest {
         return sourceRepoOwner;
     }
 
+    /**
+     * @see #state
+     */
+    @CheckForNull
+    public String getState() {
+        return state;
+    }
+
     private void updateLabels(Collection<GHLabel> labels) {
         this.labels = new HashSet<>();
         for (GHLabel label : labels) {
@@ -171,70 +183,16 @@ public class GitHubPRPullRequest {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this, SHORT_PREFIX_STYLE)
-                .append("number", number)
-                .append("issueUpdatedAt", issueUpdatedAt)
-                .append("title", title)
-                .append("prUpdatedAt", prUpdatedAt)
-                .append("headSha", headSha)
-                .append("headRef", headRef)
-                .append("mergeable", mergeable)
-                .append("baseRef", baseRef)
-                .append("userEmail", userEmail)
-                .append("userLogin", userLogin)
-                .append("htmlUrl", htmlUrl)
-                .append("labels", labels)
-                .append("lastCommentCreatedAt", lastCommentCreatedAt)
-                .append("sourceRepoOwner", sourceRepoOwner)
-                .build();
+        return ToStringBuilder.reflectionToString(this, SHORT_PREFIX_STYLE);
     }
 
-    //CHECKSTYLE:OFF
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        GitHubPRPullRequest that = (GitHubPRPullRequest) o;
-
-        if (number != that.number) return false;
-        if (baseRef != null ? !baseRef.equals(that.baseRef) : that.baseRef != null) return false;
-        if (headRef != null ? !headRef.equals(that.headRef) : that.headRef != null) return false;
-        if (headSha != null ? !headSha.equals(that.headSha) : that.headSha != null) return false;
-        if (issueUpdatedAt != null ? !issueUpdatedAt.equals(that.issueUpdatedAt) : that.issueUpdatedAt != null)
-            return false;
-        if (labels != null ? !labels.equals(that.labels) : that.labels != null) return false;
-        if (lastCommentCreatedAt != null ? !lastCommentCreatedAt.equals(that.lastCommentCreatedAt) : that.lastCommentCreatedAt != null)
-            return false;
-        if (mergeable != null ? !mergeable.equals(that.mergeable) : that.mergeable != null) return false;
-        if (prUpdatedAt != null ? !prUpdatedAt.equals(that.prUpdatedAt) : that.prUpdatedAt != null) return false;
-        if (title != null ? !title.equals(that.title) : that.title != null) return false;
-        if (htmlUrl != null ? !htmlUrl.equals(that.htmlUrl) : that.htmlUrl != null) return false;
-        if (userEmail != null ? !userEmail.equals(that.userEmail) : that.userEmail != null) return false;
-        if (userLogin != null ? !userLogin.equals(that.userLogin) : that.userLogin != null) return false;
-        if (sourceRepoOwner != null ? !sourceRepoOwner.equals(that.sourceRepoOwner) : that.sourceRepoOwner != null)
-            return false;
-
-        return true;
+        return EqualsBuilder.reflectionEquals(this, o);
     }
 
     @Override
     public int hashCode() {
-        int result = number;
-        result = 31 * result + (issueUpdatedAt != null ? issueUpdatedAt.hashCode() : 0);
-        result = 31 * result + (title != null ? title.hashCode() : 0);
-        result = 31 * result + (prUpdatedAt != null ? prUpdatedAt.hashCode() : 0);
-        result = 31 * result + (headSha != null ? headSha.hashCode() : 0);
-        result = 31 * result + (headRef != null ? headRef.hashCode() : 0);
-        result = 31 * result + (mergeable != null ? mergeable.hashCode() : 0);
-        result = 31 * result + (baseRef != null ? baseRef.hashCode() : 0);
-        result = 31 * result + (userEmail != null ? userEmail.hashCode() : 0);
-        result = 31 * result + (userLogin != null ? userLogin.hashCode() : 0);
-        result = 31 * result + (htmlUrl != null ? htmlUrl.hashCode() : 0);
-        result = 31 * result + (labels != null ? labels.hashCode() : 0);
-        result = 31 * result + (lastCommentCreatedAt != null ? lastCommentCreatedAt.hashCode() : 0);
-        result = 31 * result + (sourceRepoOwner != null ? sourceRepoOwner.hashCode() : 0);
-        return result;
+        return HashCodeBuilder.reflectionHashCode(this);
     }
-    //CHECKSTYLE:ON
 }

@@ -52,6 +52,7 @@ import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.NUMBER;
 import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.SHORT_DESC;
 import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.SOURCE_BRANCH;
 import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.SOURCE_REPO_OWNER;
+import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.STATE;
 import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.TARGET_BRANCH;
 import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.TITLE;
 import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.TRIGGER_SENDER_AUTHOR;
@@ -274,7 +275,8 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
                 HEAD_SHA.param(cause.getHeadSha()),
                 COND_REF.param(cause.getCondRef()),
                 CAUSE_SKIP.param(cause.isSkip()),
-                NUMBER.param(String.valueOf(cause.getNumber()))
+                NUMBER.param(String.valueOf(cause.getNumber())),
+                STATE.param(String.valueOf(cause.getState()))
         ));
         GitHubPRBadgeAction gitHubPRBadgeAction = new GitHubPRBadgeAction(cause);
 
