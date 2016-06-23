@@ -167,13 +167,13 @@ public class GHRule implements TestRule {
         storedConfig.save();
 
 
-        git.branchCreate().setName("branch-1").call();
-        git.checkout().setName("branch-1").call();
-        commitFile(gitRootDir, "branch-1.file", "content", "commit for branch-1");
+        git.branchCreate().setName("com.github.kostyasha.github.integration.branch-1").call();
+        git.checkout().setName("com.github.kostyasha.github.integration.branch-1").call();
+        commitFile(gitRootDir, "com.github.kostyasha.github.integration.branch-1.file", "content", "commit for com.github.kostyasha.github.integration.branch-1");
 
-        git.branchCreate().setName("branch-2").call();
-        git.checkout().setName("branch-2").call();
-        commitFile(gitRootDir, "branch-2.file", "content", "commit for branch-2");
+        git.branchCreate().setName("com.github.kostyasha.github.integration.branch-2").call();
+        git.checkout().setName("com.github.kostyasha.github.integration.branch-2").call();
+        commitFile(gitRootDir, "com.github.kostyasha.github.integration.branch-2.file", "content", "commit for com.github.kostyasha.github.integration.branch-2");
 
         git.checkout().setName("master").call();
 

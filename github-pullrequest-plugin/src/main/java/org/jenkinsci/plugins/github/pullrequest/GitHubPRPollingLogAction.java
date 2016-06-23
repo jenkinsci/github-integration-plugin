@@ -2,7 +2,7 @@ package org.jenkinsci.plugins.github.pullrequest;
 
 import hudson.model.Job;
 import hudson.model.Run;
-import org.jenkinsci.plugins.github_integration.generic.GitHubAbstractPollingLogAction;
+import com.github.kostyasha.github.integration.generic.GitHubPollingLogAction;
 
 import static org.apache.commons.io.IOUtils.closeQuietly;
 
@@ -11,7 +11,7 @@ import static org.apache.commons.io.IOUtils.closeQuietly;
  *
  * @author Alina Karpovich
  */
-public class GitHubPRPollingLogAction  extends GitHubAbstractPollingLogAction {
+public class GitHubPRPollingLogAction  extends GitHubPollingLogAction {
 
     public GitHubPRPollingLogAction(Run<?, ?> run) {
         super(run);

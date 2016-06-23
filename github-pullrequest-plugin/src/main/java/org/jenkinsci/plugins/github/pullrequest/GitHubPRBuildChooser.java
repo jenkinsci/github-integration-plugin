@@ -26,7 +26,7 @@
 //    }
 //
 //    @Override
-//    public Build prevBuildForChangelog(String branch, BuildData data, GitClient git, BuildChooserContext context)
+//    public Build prevBuildForChangelog(String com.github.kostyasha.github.integration.branch, BuildData data, GitClient git, BuildChooserContext context)
 //          throws IOException, InterruptedException {
 //        BuildData previousBuildData = getPreviousBuildDataFor(context.getBuild());
 //        if (previousBuildData != null){

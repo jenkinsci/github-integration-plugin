@@ -4,7 +4,6 @@ import com.cloudbees.jenkins.GitHubWebHook;
 import hudson.BulkChange;
 import hudson.Functions;
 import hudson.XmlFile;
-import hudson.model.Action;
 import hudson.model.BuildBadgeAction;
 import hudson.model.CauseAction;
 import hudson.model.Item;
@@ -12,14 +11,13 @@ import hudson.model.Job;
 import hudson.model.ParametersAction;
 import hudson.model.Result;
 import hudson.model.Run;
-import hudson.model.Saveable;
 import hudson.model.listeners.SaveableListener;
 import hudson.model.queue.QueueTaskFuture;
 import hudson.util.FormValidation;
 import hudson.util.RunList;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.github.pullrequest.utils.JobHelper;
-import org.jenkinsci.plugins.github_integration.generic.GitHubAbstractRepository;
+import com.github.kostyasha.github.integration.generic.GitHubRepository;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.slf4j.Logger;
@@ -41,7 +39,7 @@ import static org.jenkinsci.plugins.github.util.JobInfoHelpers.asParameterizedJo
  *
  * @author Kanstantsin Shautsou
  */
-public class GitHubPRRepository extends GitHubAbstractRepository {
+public class GitHubPRRepository extends GitHubRepository {
     /**
      * Store constantly changing information in job directory with .runtime.xml tail
      */

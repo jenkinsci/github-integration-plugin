@@ -14,12 +14,12 @@ table(width: "1000px") {
         td("Issue updated at " + my.issueUpdatedAt)
     }
     tr() {
-        td("Source branch: " + my.headRef)
+        td("Source com.github.kostyasha.github.integration.branch: " + my.headRef)
         td("Author's email: " + my.userEmail)
         td("PR updated at " + my.prUpdatedAt)
     }
     tr() {
-        td("Target branch: " + my.baseRef)
+        td("Target com.github.kostyasha.github.integration.branch: " + my.baseRef)
         td(my.mergeable ? "PR mergeable " : "PR NOT mergeable")
         td("Last commented at " + my.lastCommentCreatedAt)
     }
