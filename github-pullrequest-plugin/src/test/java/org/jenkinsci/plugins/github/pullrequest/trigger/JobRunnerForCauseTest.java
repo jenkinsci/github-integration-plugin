@@ -24,12 +24,10 @@ import java.util.concurrent.TimeUnit;
 
 import static org.jenkinsci.plugins.github.pullrequest.GitHubPRCause.newGitHubPRCause;
 
-
 /**
  * @author Kanstantsin Shautsou
  */
-public abstract class JobRunnerForCauseTest {
-
+public class JobRunnerForCauseTest {
     @Rule
     public JenkinsRule j = new JenkinsRule();
 

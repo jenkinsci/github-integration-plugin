@@ -215,7 +215,7 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
     /**
      * Cancel previous builds for specified PR id.
      */
-    protected int cancelQueuedBuildByPrNumber(final int id) {
+    public int cancelQueuedBuildByPrNumber(final int id) {
         int canceled = 0;
         SecurityContext old = impersonate(ACL.SYSTEM);
         try {

@@ -239,13 +239,6 @@ public class GitHubPRCause extends Cause {
         this.commitAuthorEmail = commitAuthorEmail;
         return this;
     }
-    /**
-     * @see #state
-     */
-    public GitHubPRCause withState(String state) {
-        this.state = state;
-        return this;
-    }
 
     /**
      * @see #skip
