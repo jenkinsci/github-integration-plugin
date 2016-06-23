@@ -56,7 +56,7 @@ public class GitHubPRNonMergeableEventTest {
         when(remotePr.getHead()).thenReturn(ghCommitPointer);
         when(remotePr.getBase()).thenReturn(ghCommitPointer);
         when(ghCommitPointer.getSha()).thenReturn("1r134rsha324");
-        when(ghCommitPointer.getRef()).thenReturn("some/com.github.kostyasha.github.integration.branch");
+        when(ghCommitPointer.getRef()).thenReturn("some/branch");
         when(remotePr.getRepository()).thenReturn(ghRepository);
         when(ghRepository.getIssue(0)).thenReturn(ghIssue);
         when(ghIssue.getLabels()).thenReturn(Collections.<GHLabel>emptySet());

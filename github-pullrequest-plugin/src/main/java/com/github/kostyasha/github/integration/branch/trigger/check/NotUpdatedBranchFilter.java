@@ -61,7 +61,7 @@ public class NotUpdatedBranchFilter implements Predicate<GHBranch> {
             return updated;
         } catch (Exception e) {
             // should never happen because
-            LOGGER.warn("Can't compare com.github.kostyasha.github.integration.branch [#{} {}] with local copy for update",
+            LOGGER.warn("Can't compare branch [#{} {}] with local copy for update",
                     remoteBranch.getName(), remoteBranch.getSHA1(), e);
             return false;
         }

@@ -33,7 +33,7 @@ public class BranchRestrictionFilter implements Predicate<GHPullRequest> {
     @Override
     public boolean apply(GHPullRequest remotePR) {
         if (!branchRestriction.isBranchBuildAllowed(remotePR)) {
-            logger.info("Skipping [#{} {}] because of com.github.kostyasha.github.integration.branch restriction", remotePR.getNumber(), remotePR.getTitle());
+            logger.info("Skipping [#{} {}] because of branch restriction", remotePR.getNumber(), remotePR.getTitle());
             return false;
         }
 

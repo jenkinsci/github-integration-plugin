@@ -23,7 +23,7 @@ public class SkipFirstRunForBranchFilter implements Predicate<GHBranch> {
     @Override
     public boolean apply(GHBranch remoteBranch) {
         if (skipFirstRun) {
-            logger.info("Skipping first run for com.github.kostyasha.github.integration.branch #{}", remoteBranch.getName());
+            logger.info("Skipping first run for branch '{}'", remoteBranch.getName());
             return false;
         }
 

@@ -1,18 +1,17 @@
 package com.github.kostyasha.github.integration.branch;
 
 import antlr.ANTLRException;
-import com.github.kostyasha.github.integration.branch.events.GitHubBranchEvent;
-import com.github.kostyasha.github.integration.branch.trigger.JobRunnerForBranchCause;
-import com.github.kostyasha.github.integration.branch.trigger.check.NotUpdatedBranchFilter;
-import com.github.kostyasha.github.integration.branch.trigger.check.PushToCauseConverter;
-import com.github.kostyasha.github.integration.branch.trigger.check.SkipFirstRunForBranchFilter;
 import com.cloudbees.jenkins.GitHubRepositoryName;
 import com.cloudbees.jenkins.GitHubWebHook;
 import com.coravy.hudson.plugins.github.GithubProjectProperty;
+import com.github.kostyasha.github.integration.branch.events.GitHubBranchEvent;
+import com.github.kostyasha.github.integration.branch.trigger.JobRunnerForBranchCause;
+import com.github.kostyasha.github.integration.generic.GitHubTrigger;
 import hudson.Extension;
 import hudson.model.Action;
 import hudson.model.Item;
 import hudson.model.Job;
+import hudson.triggers.Trigger;
 import hudson.triggers.TriggerDescriptor;
 import hudson.util.SequentialExecutionQueue;
 import jenkins.model.Jenkins;
@@ -24,7 +23,6 @@ import org.jenkinsci.plugins.github.pullrequest.GitHubPRTriggerMode;
 import org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRBranchRestriction;
 import org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRUserRestriction;
 import org.jenkinsci.plugins.github.pullrequest.utils.LoggingTaskListenerWrapper;
-import com.github.kostyasha.github.integration.generic.GitHubTrigger;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.github.GHBranch;
@@ -50,6 +48,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import static com.github.kostyasha.github.integration.branch.trigger.check.LocalRepoUpdater.updateLocalRepo;
+import static com.github.kostyasha.github.integration.branch.trigger.check.NotUpdatedBranchFilter.notUpdated;
+import static com.github.kostyasha.github.integration.branch.trigger.check.PushToCauseConverter.toGitHubPushCause;
+import static com.github.kostyasha.github.integration.branch.trigger.check.SkipFirstRunForBranchFilter.ifSkippedFirstRun;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -65,7 +67,6 @@ import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull
 import static org.jenkinsci.plugins.github.pullrequest.webhook.WebhookInfoPredicates.withHookTriggerMode;
 import static org.jenkinsci.plugins.github.util.FluentIterableWrapper.from;
 import static org.jenkinsci.plugins.github.util.JobInfoHelpers.isBuildable;
-import static com.github.kostyasha.github.integration.branch.trigger.check.LocalRepoUpdater.updateLocalRepo;
 
 /**
  * @author Kanstantsin Shautsou
@@ -259,7 +260,7 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
     /**
      * Runs check
      *
-     * @param branch - com.github.kostyasha.github.integration.branch for check, if null - then all PRs
+     * @param branch - branch for check, if null - then all PRs
      */
     public void doRun(String branch) {
         if (not(isBuildable()).apply(job)) {
@@ -302,7 +303,7 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
     }
 
     /**
-     * @return list of causes for scheduling com.github.kostyasha.github.integration.branch builds.
+     * @return list of causes for scheduling branch builds.
      */
     private List<GitHubBranchCause> readyToBuildCauses(GitHubBranchRepository localRepository,
                                                        LoggingTaskListenerWrapper listener,
@@ -317,17 +318,17 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
             Set<GHBranch> remoteBranches = branchesToCheck(branch, remoteRepo, localRepository);
 
             Set<GHBranch> prepeared = from(remoteBranches)
-                    .filter(NotUpdatedBranchFilter.notUpdated(localRepository, listener))
+                    .filter(notUpdated(localRepository, listener))
 //                    .transform(prepareUserRestrictionFilter(localRepository, this))
                     .toSet();
 
             List<GitHubBranchCause> causes = from(prepeared)
                     .filter(and(
-                            SkipFirstRunForBranchFilter.ifSkippedFirstRun(listener, skipFirstRun)//,
+                            ifSkippedFirstRun(listener, skipFirstRun)//,
 //                            withBranchRestriction(listener, branchRestriction),
 //                            withUserRestriction(listener, userRestriction)
                     ))
-                    .transform(PushToCauseConverter.toGitHubPushCause(localRepository, listener, this))
+                    .transform(toGitHubPushCause(localRepository, listener, this))
                     .filter(notNull())
                     .toList();
 
@@ -399,7 +400,7 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
         }
 
         public static DescriptorImpl get() {
-            return all().get(DescriptorImpl.class);
+            return Trigger.all().get(DescriptorImpl.class);
         }
     }
 }

@@ -1,6 +1,5 @@
 package com.github.kostyasha.github.integration.branch;
 
-import com.github.kostyasha.github.integration.branch.utils.JobHelper;
 import com.cloudbees.jenkins.GitHubRepositoryName;
 import com.coravy.hudson.plugins.github.GithubProjectProperty;
 import hudson.Extension;
@@ -18,6 +17,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 
+import static com.github.kostyasha.github.integration.branch.utils.JobHelper.ghBranchTriggerFromJob;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 import static org.jenkinsci.plugins.github.pullrequest.utils.PRHelperFunctions.asFullRepoName;
 
@@ -32,7 +32,7 @@ public class GitHubBranchRepositoryFactory extends TransientActionFactory<Job> {
     @Override
     public Collection<? extends Action> createFor(@Nonnull Job job) {
         try {
-            if (nonNull(JobHelper.ghBranchTriggerFromJob(job))) {
+            if (nonNull(ghBranchTriggerFromJob(job))) {
                 return Collections.singleton(forProject(job));
             }
         } catch (Exception ex) {
@@ -47,7 +47,7 @@ public class GitHubBranchRepositoryFactory extends TransientActionFactory<Job> {
     private static GitHubBranchRepository forProject(Job<?, ?> job) {
         XmlFile configFile = new XmlFile(new File(job.getRootDir(), GitHubBranchRepository.FILE));
 
-        GitHubBranchTrigger trigger = JobHelper.ghBranchTriggerFromJob(job);
+        GitHubBranchTrigger trigger = ghBranchTriggerFromJob(job);
         GitHubRepositoryName repo = trigger.getRepoFullName(job);
 
         GithubProjectProperty property = job.getProperty(GithubProjectProperty.class);

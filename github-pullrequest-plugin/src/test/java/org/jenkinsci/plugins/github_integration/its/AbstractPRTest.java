@@ -69,7 +69,7 @@ public abstract class AbstractPRTest {
         assertThat("Action storage should be empty", pulls.entrySet(), Matchers.hasSize(0));
 
         final GHPullRequest pullRequest1 = ghRule.getGhRepo().createPullRequest("title with \"quote\" text",
-                "com.github.kostyasha.github.integration.branch-1", "master", "body");
+                "branch-1", "master", "body");
 
         await().pollInterval(2, SECONDS)
                 .timeout(100, SECONDS)

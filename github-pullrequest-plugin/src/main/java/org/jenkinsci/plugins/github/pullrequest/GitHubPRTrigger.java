@@ -87,7 +87,7 @@ import static org.jenkinsci.plugins.github.util.JobInfoHelpers.isBuildable;
  * - cron run, persist
  * <p>
  * Restrictions can't have resolver, so they separate and provide security check methods:
- * - Target com.github.kostyasha.github.integration.branch restriction {@link org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRUserRestriction}
+ * - Target branch restriction {@link org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRUserRestriction}
  * - User restriction (check comments, labels, etc)
  * {@link org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRUserRestriction}
  * (whitelist manipulations using comments is also allowed)

@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.util.regex.Pattern;
 
 /**
- * Restriction by target com.github.kostyasha.github.integration.branch (one or many).
+ * Restriction by target branch (one or many).
  *
  * @author Kanstantsin Shautsou
  */
@@ -36,18 +36,18 @@ public class GitHubPRBranchRestriction implements Describable<GitHubPRBranchRest
 
     public boolean isBranchBuildAllowed(GHPullRequest remotePR) {
         String branchName = remotePR.getBase().getRef();
-        //if allowed com.github.kostyasha.github.integration.branch list is empty, it's allowed to build any com.github.kostyasha.github.integration.branch
+        //if allowed branch list is empty, it's allowed to build any branch
         boolean isAllowed = targetBranchList.isEmpty();
 
         for (String branch : targetBranchList) {
-            //if com.github.kostyasha.github.integration.branch name matches to pattern, allow build
+            //if branch name matches to pattern, allow build
             isAllowed = Pattern.compile(branch).matcher(branchName).matches();
             if (isAllowed) {
                 break;
             }
         }
 
-        LOGGER.trace("Target com.github.kostyasha.github.integration.branch {} is {} in our whitelist of target branches", branchName,
+        LOGGER.trace("Target branch {} is {} in our whitelist of target branches", branchName,
                 (isAllowed ? "" : "not "));
         return isAllowed;
     }
@@ -68,7 +68,7 @@ public class GitHubPRBranchRestriction implements Describable<GitHubPRBranchRest
     public static class DescriptorImpl extends Descriptor<GitHubPRBranchRestriction> {
         @Override
         public String getDisplayName() {
-            return "Target com.github.kostyasha.github.integration.branch";
+            return "Target branch";
         }
     }
 }
