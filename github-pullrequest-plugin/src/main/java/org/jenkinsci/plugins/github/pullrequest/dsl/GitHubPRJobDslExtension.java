@@ -2,6 +2,7 @@ package org.jenkinsci.plugins.github.pullrequest.dsl;
 
 import antlr.ANTLRException;
 import hudson.Extension;
+import javaposse.jobdsl.dsl.helpers.step.StepContext;
 import javaposse.jobdsl.dsl.helpers.publisher.PublisherContext;
 import javaposse.jobdsl.dsl.helpers.triggers.TriggerContext;
 import javaposse.jobdsl.plugin.ContextExtensionPoint;
@@ -39,6 +40,20 @@ public class GitHubPRJobDslExtension extends ContextExtensionPoint {
         return new GitHubPRBuildStatusPublisher(
                 context.message(),
                 context.unstableAs(),
+                null,
+                null,
+                null
+        );
+    }
+
+    @DslExtensionMethod(context = StepContext.class)
+    public Object updateStatusOnGH(Runnable closure) throws ANTLRException {
+        GitHubPRStatusPublisherDslContext context = new GitHubPRStatusPublisherDslContext();
+        executeInContext(closure, context);
+
+        return new GitHubPRBuildStatusPublisher(
+                context.message(),
+                null,
                 null,
                 null,
                 null
