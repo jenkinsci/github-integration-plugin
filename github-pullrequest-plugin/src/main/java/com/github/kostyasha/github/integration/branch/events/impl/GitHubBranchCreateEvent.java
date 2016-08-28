@@ -30,18 +30,21 @@ public class GitHubBranchCreateEvent extends GitHubBranchEvent {
     }
 
     @Override
-    public GitHubBranchCause check(GitHubBranchTrigger trigger, GHBranch remoteBranch,
-                                   @CheckForNull GitHubLocalBranch localPR, TaskListener listener) throws IOException {
-        if (remoteBranch != null) {
-            return null; // already closed, nothing to check
+    public GitHubBranchCause check(GitHubBranchTrigger trigger,
+                                   GHBranch remoteBranch,
+                                   @CheckForNull GitHubLocalBranch localBranch,
+                                   TaskListener listener) throws IOException {
+        if (remoteBranch == null) {
+            // no remote -> can't be 'created'
+            return null;
         }
 
         GitHubBranchCause cause = null;
-        String causeMessage = "PR opened";
-        if (isNull(localPR)) { // new
+        String causeMessage = "Branch created";
+        if (isNull(localBranch)) { // didn't exist before
             final PrintStream logger = listener.getLogger();
-            logger.println(DISPLAY_NAME + ": state has changed (PR was opened)");
-//            cause = new GitHubBranchCause(remoteBranch, causeMessage, false);
+            logger.println(DISPLAY_NAME + ": state has changed (branch was created)");
+            cause = new GitHubBranchCause(remoteBranch, causeMessage, false);
         }
 
         return cause;

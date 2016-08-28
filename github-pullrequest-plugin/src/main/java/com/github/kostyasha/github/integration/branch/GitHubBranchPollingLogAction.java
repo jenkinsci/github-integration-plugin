@@ -23,15 +23,15 @@ public class GitHubBranchPollingLogAction extends GitHubPollingLogAction {
 
     @Override
     public String getDisplayName() {
-        return "GitHub Push Polling Log";
+        return "GitHub Branch Polling Log";
     }
 
     @Override
     public String getUrlName() {
-        return "github-push-polling";
+        return "github-branch-polling";
     }
 
     public String getPollingFileName() {
-        return "github-push-polling.log";
+        return "github-branch-polling.log";
     }
 }

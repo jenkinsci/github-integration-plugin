@@ -8,6 +8,7 @@ import com.github.kostyasha.github.integration.branch.events.GitHubBranchEvent;
 import com.github.kostyasha.github.integration.branch.events.GitHubBranchEventDescriptor;
 import com.github.kostyasha.github.integration.branch.trigger.JobRunnerForBranchCause;
 import com.github.kostyasha.github.integration.generic.GitHubTrigger;
+import com.google.common.collect.ImmutableSet;
 import hudson.Extension;
 import hudson.model.Action;
 import hudson.model.Item;
@@ -46,12 +47,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 import static com.github.kostyasha.github.integration.branch.trigger.check.LocalRepoUpdater.updateLocalRepo;
 import static com.github.kostyasha.github.integration.branch.trigger.check.NotUpdatedBranchFilter.notUpdated;
-import static com.github.kostyasha.github.integration.branch.trigger.check.PushToCauseConverter.toGitHubPushCause;
+import static com.github.kostyasha.github.integration.branch.trigger.check.BranchToCauseConverter.toGitHubBranchCause;
 import static com.github.kostyasha.github.integration.branch.trigger.check.SkipFirstRunForBranchFilter.ifSkippedFirstRun;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -76,23 +78,14 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
     private static final Logger LOGGER = LoggerFactory.getLogger(GitHubBranchTrigger.class);
     public static final String FINISH_MSG = "Finished GitHub Push trigger check";
 
-    @CheckForNull
-    private GitHubPRTriggerMode triggerMode = CRON;
-
     private List<GitHubBranchEvent> events = new ArrayList<>();
 
     private boolean preStatus = false;
-    private boolean cancelQueued = false;
-    private boolean skipFirstRun = false;
 
     @CheckForNull
     private GitHubPRUserRestriction userRestriction;
     @CheckForNull
     private GitHubPRBranchRestriction branchRestriction;
-
-    // for performance
-    private transient GitHubRepositoryName repoName;
-    private transient GHRepository remoteRepository;
 
     @CheckForNull
     private transient GitHubBranchPollingLogAction pollingLogAction;
@@ -106,14 +99,14 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
      * For groovy UI
      */
     @Restricted(value = NoExternalUse.class)
-    public GitHubBranchTrigger() {
+    public GitHubBranchTrigger() throws ANTLRException {
+        super("");
     }
 
     @DataBoundConstructor
     public GitHubBranchTrigger(String spec, GitHubPRTriggerMode triggerMode, List<GitHubBranchEvent> events)
             throws ANTLRException {
-        super(spec);
-        this.triggerMode = triggerMode;
+        super(spec, triggerMode);
         this.events = events;
     }
 
@@ -177,7 +170,7 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
 
     @Override
     public void start(Job<?, ?> project, boolean newInstance) {
-        LOGGER.info("Starting GitHub Push trigger for project {}", project.getName());
+        LOGGER.info("Starting GitHub Branch trigger for project {}", project.getName());
         super.start(project, newInstance);
 
         if (newInstance && GitHubPlugin.configuration().isManageHooks() && withHookTriggerMode().apply(project)) {
@@ -195,7 +188,7 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
     public void stop() {
         //TODO clean hooks?
         if (nonNull(job)) {
-            LOGGER.info("Stopping the Push trigger for project {}", job.getFullName());
+            LOGGER.info("Stopping the Branch trigger for project {}", job.getFullName());
         }
         super.stop();
     }
@@ -236,25 +229,6 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
         });
     }
 
-    public GitHubRepositoryName getRepoFullName(Job<?, ?> job) {
-        if (isNull(repoName)) {
-            checkNotNull(job, "job object is null, race condition?");
-            GithubProjectProperty ghpp = job.getProperty(GithubProjectProperty.class);
-
-            checkNotNull(ghpp, "GitHub project property is not defined. Can't setup GitHub PR trigger for job %s",
-                    job.getName());
-            checkNotNull(ghpp.getProjectUrl(), "A GitHub project url is required");
-
-            GitHubRepositoryName repo = GitHubRepositoryName.create(ghpp.getProjectUrl().baseUrl());
-
-            checkNotNull(repo, "Invalid GitHub project url: %s", ghpp.getProjectUrl().baseUrl());
-
-            repoName = repo;
-        }
-
-        return repoName;
-    }
-
     public GHRepository getRemoteRepo() throws IOException {
         if (isNull(remoteRepository)) {
             Iterator<GHRepository> resolved = getRepoFullName(job).resolve().iterator();
@@ -264,14 +238,6 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
         }
 
         return remoteRepository;
-    }
-
-    public void trySave() {
-        try {
-            job.save();
-        } catch (IOException e) {
-            LOGGER.error("Error while saving job to file", e);
-        }
     }
 
     /**
@@ -301,7 +267,7 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
         try (LoggingTaskListenerWrapper listener =
                      new LoggingTaskListenerWrapper(getPollingLogAction().getPollingLogFile(), UTF_8)) {
             long startTime = System.currentTimeMillis();
-            listener.debug("Running GitHub Pull Request trigger check for {} on {}",
+            listener.debug("Running GitHub Branch trigger check for {} on {}",
                     getDateTimeInstance().format(new Date(startTime)), localRepository.getFullName());
 
             causes = readyToBuildCauses(localRepository, listener, branch);
@@ -334,23 +300,23 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
             GHRepository remoteRepo = getRemoteRepo();
             Set<GHBranch> remoteBranches = branchesToCheck(branch, remoteRepo, localRepository);
 
-            Set<GHBranch> prepeared = from(remoteBranches)
+            Set<GHBranch> prepared = from(remoteBranches)
                     .filter(notUpdated(localRepository, listener))
 //                    .transform(prepareUserRestrictionFilter(localRepository, this))
                     .toSet();
 
-            List<GitHubBranchCause> causes = from(prepeared)
+            List<GitHubBranchCause> causes = from(prepared)
                     .filter(and(
                             ifSkippedFirstRun(listener, skipFirstRun)//,
 //                            withBranchRestriction(listener, branchRestriction),
 //                            withUserRestriction(listener, userRestriction)
                     ))
-                    .transform(toGitHubPushCause(localRepository, listener, this))
+                    .transform(toGitHubBranchCause(localRepository, listener, this))
                     .filter(notNull())
                     .toList();
 
             LOGGER.trace("Causes count for {}: {}", localRepository.getFullName(), causes.size());
-            from(prepeared).transform(updateLocalRepo(localRepository)).toSet();
+            final ImmutableSet<GHBranch> ghBranches = from(prepared).transform(updateLocalRepo(localRepository)).toSet();
 
             saveIfSkipFirstRun();
 
@@ -368,24 +334,13 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
 
     private Set<GHBranch> branchesToCheck(String branch, GHRepository remoteRepo, GitHubBranchRepository localRepository)
             throws IOException {
-        return (Set<GHBranch>) remoteRepo.getBranches().values();
-    }
-
-    private void saveIfSkipFirstRun() {
-        if (skipFirstRun) {
-            LOGGER.info("Skipping first run for {}", job.getFullName());
-            skipFirstRun = false;
-            trySave();
-        }
+        final LinkedHashSet<GHBranch> ghBranches = new LinkedHashSet<>();
+        ghBranches.addAll(remoteRepo.getBranches().values());
+        return ghBranches;
     }
 
     private static boolean isSupportedTriggerMode(GitHubPRTriggerMode mode) {
         return mode != LIGHT_HOOKS;
-    }
-
-    @CheckForNull
-    public Job<?, ?> getJob() {
-        return job;
     }
 
     @Extension

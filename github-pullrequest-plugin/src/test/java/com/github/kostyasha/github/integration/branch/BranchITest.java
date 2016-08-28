@@ -28,6 +28,7 @@ import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.ghPRTrigg
 import static org.jenkinsci.plugins.github_integration.awaitility.GHBranchAppeared.ghBranchAppeared;
 import static org.jenkinsci.plugins.github_integration.awaitility.GHPRAppeared.ghPRAppeared;
 import static org.jenkinsci.plugins.github_integration.junit.GHRule.GH_API_DELAY;
+import static org.jenkinsci.plugins.github_integration.junit.GHRule.runBranchTriggerAndWaitUntilEnd;
 import static org.jenkinsci.plugins.github_integration.junit.GHRule.runTriggerAndWaitUntilEnd;
 
 /**
@@ -49,15 +50,16 @@ public class BranchITest {
 
     public void smokeTest(Job<?, ?> job) throws Exception {
         // fails with workflow
-        if (job instanceof FreeStyleProject || job instanceof MatrixProject) {
+        if (/**job instanceof FreeStyleProject || */job instanceof MatrixProject) {
             jRule.configRoundtrip(job); // activate trigger
+        } else {
+            // hack configRountrip that doesn't work with workflow
+            ghBranchTriggerFromJob(job).start(job, true);
         }
 
         GitHubBranchTrigger trigger = ghBranchTriggerFromJob(job);
 
-//        trigger.start(job, true); // hack configRountrip that doesn't work with workflow
-
-        runTriggerAndWaitUntilEnd(trigger, 10 * GH_API_DELAY);
+        runBranchTriggerAndWaitUntilEnd(trigger, 10 * GH_API_DELAY);
 
         jRule.waitUntilNoActivity();
 
@@ -68,9 +70,9 @@ public class BranchITest {
 
         Map<String, GitHubLocalBranch> branches = ghRepository.getBranches();
 
-        assertThat("Action storage should be empty", branches.entrySet(), Matchers.hasSize(0));
+        assertThat("Action storage should be empty", branches.entrySet(), Matchers.hasSize(3));
 
-        runTriggerAndWaitUntilEnd(trigger, 10 * GH_API_DELAY);
+        runBranchTriggerAndWaitUntilEnd(trigger, 10 * GH_API_DELAY);
 
         jRule.waitUntilNoActivity();
 

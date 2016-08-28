@@ -16,19 +16,19 @@ import java.io.IOException;
 /**
  * @author Kanstantsin Shautsou
  */
-public class GitHubBranchEvent extends AbstractDescribableImpl<GitHubBranchEvent> {
+public abstract class GitHubBranchEvent extends AbstractDescribableImpl<GitHubBranchEvent> {
     private static final Logger LOG = LoggerFactory.getLogger(GitHubBranchEvent.class);
 
     /**
-     * indicates that PR was changed
+     * indicates that branch was created
      *
      * @param remoteBranch current branch state fetched from GH
      * @param localBranch  branch state from last run saved in jenkins. null when not exist before
-     * @return true if PR should be run
+     * @return true if branch should be run
      */
     @CheckForNull
     public GitHubBranchCause check(
-            GitHubBranchTrigger gitHubPRTrigger,
+            GitHubBranchTrigger gitHubBranchTrigger,
             GHBranch remoteBranch,
             @CheckForNull GitHubLocalBranch localBranch,
             TaskListener listener) throws IOException {
@@ -38,7 +38,7 @@ public class GitHubBranchEvent extends AbstractDescribableImpl<GitHubBranchEvent
     /**
      * Check that is used for lightweight hooks (pure GitHub hooks).
      */
-    public GitHubBranchCause checkHook(GitHubBranchTrigger gitHubPRTrigger,
+    public GitHubBranchCause checkHook(GitHubBranchTrigger githubTrigger,
                                        GHEventPayload payload,
                                        TaskListener listener) {
         return null;

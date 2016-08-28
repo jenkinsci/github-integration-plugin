@@ -1,5 +1,6 @@
 package com.github.kostyasha.github.integration.branch.trigger;
 
+import com.github.kostyasha.github.integration.branch.GitHubBranchBadgeAction;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
@@ -7,10 +8,8 @@ import hudson.model.Action;
 import hudson.model.Cause;
 import hudson.model.CauseAction;
 import hudson.model.Job;
-import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
-import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Queue;
 import hudson.model.queue.QueueTaskFuture;
 import com.github.kostyasha.github.integration.branch.GitHubBranchCause;
@@ -24,11 +23,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.cloudbees.jenkins.GitHubWebHook.getJenkinsInstance;
+import static com.github.kostyasha.github.integration.branch.data.GitHubBranchEnv.BRANCH;
+import static com.github.kostyasha.github.integration.branch.data.GitHubBranchEnv.CAUSE_SKIP;
+import static com.github.kostyasha.github.integration.branch.data.GitHubBranchEnv.HEAD_SHA;
+import static com.github.kostyasha.github.integration.branch.data.GitHubBranchEnv.SHORT_DESC;
+import static com.github.kostyasha.github.integration.branch.data.GitHubBranchEnv.URL;
 import static com.google.common.base.Predicates.instanceOf;
 import static java.util.Arrays.asList;
-import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.HEAD_SHA;
-import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.SHORT_DESC;
-import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.SOURCE_BRANCH;
+import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.getDefaultParametersValues;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
 import static org.jenkinsci.plugins.github.util.FluentIterableWrapper.from;
 import static org.jenkinsci.plugins.github.util.JobInfoHelpers.asParameterizedJobMixIn;
@@ -56,7 +58,7 @@ public class JobRunnerForBranchCause implements Predicate<GitHubBranchCause> {
             StringBuilder sb = new StringBuilder();
             sb.append("Jenkins queued the run (").append(cause.getReason()).append(")");
 
-            if (trigger.isCancelQueued() && cancelQueuedBuildByBranchName(cause.getSourceBranch())) {
+            if (trigger.isCancelQueued() && cancelQueuedBuildByBranchName(cause.getBranchName())) {
                 sb.append(". Queued builds aborted");
             }
 
@@ -106,49 +108,19 @@ public class JobRunnerForBranchCause implements Predicate<GitHubBranchCause> {
     }
 
     private QueueTaskFuture<?> startJob(GitHubBranchCause cause) {
-        List<ParameterValue> values = getDefaultParametersValues();
+        List<ParameterValue> values = getDefaultParametersValues(job);
         values.addAll(asList(
-//                TRIGGER_SENDER_AUTHOR.param(cause.getTriggerSenderName()),
-//                TRIGGER_SENDER_EMAIL.param(cause.getTriggerSenderEmail()),
-//                COMMIT_AUTHOR_NAME.param(cause.getCommitAuthorName()),
-//                COMMIT_AUTHOR_EMAIL.param(cause.getCommitAuthorEmail()),
-                SOURCE_BRANCH.param(cause.getSourceBranch()),
-//                AUTHOR_EMAIL.param(cause.getPRAuthorEmail()),
+                BRANCH.param(cause.getBranchName()),
                 SHORT_DESC.param(cause.getShortDescription()),
-//                TITLE.param(cause.getTitle()),
-//                URL.param(cause.getHtmlUrl().toString()),
-//                SOURCE_REPO_OWNER.param(cause.getSourceRepoOwner()),
-                HEAD_SHA.param(cause.getHeadSha())//,
-//                CAUSE_SKIP.param(cause.isSkip()),
+                URL.param(cause.getHtmlUrl().toString()),
+                HEAD_SHA.param(cause.getHeadSha()),
+                CAUSE_SKIP.param(cause.isSkip())
         ));
+        GitHubBranchBadgeAction gitHubBadgeAction = new GitHubBranchBadgeAction(cause);
+
         //TODO no way to get quietPeriod, so temporary ignore it
-        return asParameterizedJobMixIn(job).scheduleBuild2(0, new CauseAction(cause), new ParametersAction(values));
-    }
-
-    /**
-     * @see jenkins.model.ParameterizedJobMixIn#getDefaultParametersValues()
-     */
-    private List<ParameterValue> getDefaultParametersValues() {
-        ParametersDefinitionProperty paramDefProp = job.getProperty(ParametersDefinitionProperty.class);
-        List<ParameterValue> defValues = new ArrayList<>();
-
-        /*
-        * This check is made ONLY if someone will call this method even if isParametrized() is false.
-        */
-        if (paramDefProp == null) {
-            return defValues;
-        }
-
-        /* Scan for all parameter with an associated default values */
-        for (ParameterDefinition paramDefinition : paramDefProp.getParameterDefinitions()) {
-            ParameterValue defaultValue = paramDefinition.getDefaultParameterValue();
-
-            if (defaultValue != null) {
-                defValues.add(defaultValue);
-            }
-        }
-
-        return defValues;
+        return asParameterizedJobMixIn(job).scheduleBuild2(0, new CauseAction(cause), new ParametersAction(values),
+                gitHubBadgeAction);
     }
 
     private static class CausesFromAction implements Function<Action, Iterable<Cause>> {
@@ -167,7 +139,7 @@ public class JobRunnerForBranchCause implements Predicate<GitHubBranchCause> {
 
         @Override
         public boolean apply(Cause cause) {
-            return ((GitHubBranchCause) cause).getSourceBranch().equals(branch);
+            return ((GitHubBranchCause) cause).getBranchName().equals(branch);
         }
     }
 }

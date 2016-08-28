@@ -1,19 +1,18 @@
 package org.jenkinsci.plugins.github.pullrequest;
 
+import com.github.kostyasha.github.integration.generic.GitHubBadgeAction;
 import hudson.matrix.MatrixChildAction;
 import hudson.model.BuildBadgeAction;
 
 /**
  * @author Kanstantsin Shautsou
  */
-public class GitHubPRBadgeAction implements BuildBadgeAction, MatrixChildAction {
-    private final String htmlUrl;
-    private final String title;
+public class GitHubPRBadgeAction extends GitHubBadgeAction<GitHubPRCause> {
+
     private final int number;
 
     public GitHubPRBadgeAction(GitHubPRCause cause) {
-        this.htmlUrl = cause.getHtmlUrl().toString();
-        this.title = cause.getTitle();
+        super(cause);
         this.number = cause.getNumber();
     }
 
@@ -30,14 +29,6 @@ public class GitHubPRBadgeAction implements BuildBadgeAction, MatrixChildAction 
     @Override
     public String getUrlName() {
         return null;
-    }
-
-    public String getHtmlUrl() {
-        return htmlUrl;
-    }
-
-    public String getTitle() {
-        return title;
     }
 
     public int getNumber() {

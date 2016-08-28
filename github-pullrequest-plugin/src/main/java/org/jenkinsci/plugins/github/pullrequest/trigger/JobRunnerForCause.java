@@ -58,6 +58,7 @@ import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.TITLE;
 import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.TRIGGER_SENDER_AUTHOR;
 import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.TRIGGER_SENDER_EMAIL;
 import static org.jenkinsci.plugins.github.pullrequest.data.GitHubPREnv.URL;
+import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.getDefaultParametersValues;
 import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.getInterruptCauses;
 import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.getInterruptStatus;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
@@ -259,7 +260,7 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
     }
 
     private QueueTaskFuture<?> startJob(GitHubPRCause cause) {
-        List<ParameterValue> values = getDefaultParametersValues();
+        List<ParameterValue> values = getDefaultParametersValues(job);
         values.addAll(asList(
                 TRIGGER_SENDER_AUTHOR.param(cause.getTriggerSenderName()),
                 TRIGGER_SENDER_EMAIL.param(cause.getTriggerSenderEmail()),
@@ -294,32 +295,6 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
 
         return parameterizedJobMixIn.scheduleBuild2(quietPeriod, new CauseAction(cause), new ParametersAction(values),
                 gitHubPRBadgeAction);
-    }
-
-    /**
-     * @see jenkins.model.ParameterizedJobMixIn#getDefaultParametersValues()
-     */
-    protected List<ParameterValue> getDefaultParametersValues() {
-        ParametersDefinitionProperty paramDefProp = job.getProperty(ParametersDefinitionProperty.class);
-        List<ParameterValue> defValues = new ArrayList<>();
-
-        /*
-        * This check is made ONLY if someone will call this method even if isParametrized() is false.
-        */
-        if (paramDefProp == null) {
-            return defValues;
-        }
-
-        /* Scan for all parameter with an associated default values */
-        for (ParameterDefinition paramDefinition : paramDefProp.getParameterDefinitions()) {
-            ParameterValue defaultValue = paramDefinition.getDefaultParameterValue();
-
-            if (defaultValue != null) {
-                defValues.add(defaultValue);
-            }
-        }
-
-        return defValues;
     }
 
     protected static class CausesFromAction implements Function<Action, Iterable<Cause>> {

@@ -12,25 +12,25 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Kanstantsin Shautsou
  */
-public class PushToCauseConverter implements Function<GHBranch, GitHubBranchCause> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PushToCauseConverter.class);
+public class BranchToCauseConverter implements Function<GHBranch, GitHubBranchCause> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BranchToCauseConverter.class);
 
     private final GitHubBranchRepository localRepo;
     private final LoggingTaskListenerWrapper listener;
     private final GitHubBranchTrigger trigger;
 
-    private PushToCauseConverter(GitHubBranchRepository localRepo,
-                                 LoggingTaskListenerWrapper listener,
-                                 GitHubBranchTrigger trigger) {
+    private BranchToCauseConverter(GitHubBranchRepository localRepo,
+                                   LoggingTaskListenerWrapper listener,
+                                   GitHubBranchTrigger trigger) {
         this.localRepo = localRepo;
         this.listener = listener;
         this.trigger = trigger;
     }
 
-    public static PushToCauseConverter toGitHubPushCause(GitHubBranchRepository localRepo,
-                                                       LoggingTaskListenerWrapper listener,
-                                                       GitHubBranchTrigger trigger) {
-        return new PushToCauseConverter(localRepo, listener, trigger);
+    public static BranchToCauseConverter toGitHubBranchCause(GitHubBranchRepository localRepo,
+                                                             LoggingTaskListenerWrapper listener,
+                                                             GitHubBranchTrigger trigger) {
+        return new BranchToCauseConverter(localRepo, listener, trigger);
     }
 
     @Override

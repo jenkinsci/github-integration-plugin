@@ -3,22 +3,15 @@ package org.jenkinsci.plugins.github.pullrequest;
 import antlr.ANTLRException;
 import com.cloudbees.jenkins.GitHubRepositoryName;
 import com.cloudbees.jenkins.GitHubWebHook;
-import com.coravy.hudson.plugins.github.GithubProjectProperty;
-import com.google.common.base.Optional;
+import com.github.kostyasha.github.integration.generic.GitHubTriggerDescriptor;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.Action;
-import hudson.model.Item;
 import hudson.model.Job;
 import hudson.triggers.Trigger;
-import hudson.triggers.TriggerDescriptor;
-import hudson.util.SequentialExecutionQueue;
 import jenkins.model.Jenkins;
-import jenkins.model.ParameterizedJobMixIn;
-import jenkins.triggers.SCMTriggerItem;
 import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.github.GitHubPlugin;
-import org.jenkinsci.plugins.github.internal.GHPluginConfigException;
 import org.jenkinsci.plugins.github.pullrequest.events.GitHubPREvent;
 import org.jenkinsci.plugins.github.pullrequest.events.GitHubPREventDescriptor;
 import org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRBranchRestriction;
@@ -60,9 +53,6 @@ import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.base.Predicates.notNull;
 import static java.text.DateFormat.getDateTimeInstance;
-import static org.apache.commons.lang.StringUtils.isNotBlank;
-import static org.jenkinsci.plugins.github.config.GitHubServerConfig.withHost;
-import static org.jenkinsci.plugins.github.pullrequest.GitHubPRTriggerMode.CRON;
 import static org.jenkinsci.plugins.github.pullrequest.GitHubPRTriggerMode.LIGHT_HOOKS;
 import static org.jenkinsci.plugins.github.pullrequest.trigger.check.BranchRestrictionFilter.withBranchRestriction;
 import static org.jenkinsci.plugins.github.pullrequest.trigger.check.LocalRepoUpdater.updateLocalRepo;
@@ -105,16 +95,11 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
     public static final String FINISH_MSG = "Finished GitHub Pull Request trigger check";
 
     @CheckForNull
-    private GitHubPRTriggerMode triggerMode = CRON;
-    @CheckForNull
     private List<GitHubPREvent> events = new ArrayList<>();
     /**
      * Set PR(commit) status before build. No configurable message for it.
      */
     private boolean preStatus = false;
-    private boolean cancelQueued = false;
-    private boolean abortRunning = false;
-    private boolean skipFirstRun = false;
 
     @CheckForNull
     private GitHubPRUserRestriction userRestriction;
@@ -132,7 +117,8 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
      * For groovy UI
      */
     @Restricted(value = NoExternalUse.class)
-    public GitHubPRTrigger() {
+    public GitHubPRTrigger() throws ANTLRException {
+        super("");
     }
 
     @DataBoundConstructor
@@ -252,7 +238,7 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
 
     @Override
     public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl) super.getDescriptor();
+        return (DescriptorImpl) Jenkins.getActiveInstance().getDescriptor(this.getClass());
     }
 
     /**
@@ -268,25 +254,6 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
         });
     }
 
-    public GitHubRepositoryName getRepoFullName(Job<?, ?> job) {
-        if (isNull(repoName)) {
-            checkNotNull(job, "job object is null, race condition?");
-            GithubProjectProperty ghpp = job.getProperty(GithubProjectProperty.class);
-
-            checkNotNull(ghpp, "GitHub project property is not defined. Can't setup GitHub PR trigger for job %s",
-                    job.getName());
-            checkNotNull(ghpp.getProjectUrl(), "A GitHub project url is required");
-
-            GitHubRepositoryName repo = GitHubRepositoryName.create(ghpp.getProjectUrl().baseUrl());
-
-            checkNotNull(repo, "Invalid GitHub project url: %s", ghpp.getProjectUrl().baseUrl());
-
-            repoName = repo;
-        }
-
-        return repoName;
-    }
-
     public GHRepository getRemoteRepo() throws IOException {
         if (isNull(remoteRepository)) {
             Iterator<GHRepository> resolved = getRepoFullName(job).resolve().iterator();
@@ -296,14 +263,6 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
         }
 
         return remoteRepository;
-    }
-
-    public void trySave() {
-        try {
-            job.save();
-        } catch (IOException e) {
-            LOGGER.error("Error while saving job to file", e);
-        }
     }
 
     /**
@@ -406,14 +365,6 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
         }
     }
 
-    private void saveIfSkipFirstRun() {
-        if (skipFirstRun) {
-            LOGGER.info("Skipping first run for {}", job.getFullName());
-            skipFirstRun = false;
-            trySave();
-        }
-    }
-
     private static boolean isSupportedTriggerMode(GitHubPRTriggerMode mode) {
         return mode != LIGHT_HOOKS;
     }
@@ -443,26 +394,11 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
         return FINISH_MSG;
     }
 
-    @CheckForNull
-    public Job<?, ?> getJob() {
-        return job;
-    }
-
     @Extension
-    public static class DescriptorImpl extends TriggerDescriptor {
-        private final transient SequentialExecutionQueue queue =
-                new SequentialExecutionQueue(Jenkins.MasterComputer.threadPoolForRemoting);
-
-        private String publishedURL;
+    public static class DescriptorImpl extends GitHubTriggerDescriptor {
 
         public DescriptorImpl() {
             load();
-        }
-
-        @Override
-        public boolean isApplicable(Item item) {
-            return item instanceof Job && nonNull(SCMTriggerItem.SCMTriggerItems.asSCMTriggerItem(item))
-                    && item instanceof ParameterizedJobMixIn.ParameterizedJob;
         }
 
         @Override
@@ -478,39 +414,9 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
             return super.configure(req, formData);
         }
 
-        public String getPublishedURL() {
-            return publishedURL;
-        }
-
-        public void setPublishedURL(String publishedURL) {
-            this.publishedURL = publishedURL;
-        }
-
-        public String getJenkinsURL() {
-            String url = getPublishedURL();
-            if (isNotBlank(url)) {
-                if (!url.endsWith("/")) {
-                    url += "/";
-                }
-                return url;
-            }
-            return GitHubWebHook.getJenkinsInstance().getRootUrl();
-        }
-
         // list all available descriptors for choosing in job configuration
         public List<GitHubPREventDescriptor> getEventDescriptors() {
             return GitHubPREventDescriptor.all();
-        }
-
-        @Nonnull
-        public static GitHub githubFor(URI uri) {
-            Optional<GitHub> client = from(GitHubPlugin.configuration()
-                    .findGithubConfig(withHost(uri.getHost()))).first();
-            if (client.isPresent()) {
-                return client.get();
-            } else {
-                throw new GHPluginConfigException("Can't find appropriate client for github repo <%s>", uri);
-            }
         }
 
         public static DescriptorImpl get() {

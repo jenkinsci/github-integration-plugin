@@ -4,8 +4,10 @@ import antlr.ANTLRException;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
 import com.coravy.hudson.plugins.github.GithubProjectProperty;
+import com.github.kostyasha.github.integration.branch.GitHubBranchPollingLogAction;
 import com.github.kostyasha.github.integration.branch.GitHubBranchTrigger;
 import com.github.kostyasha.github.integration.branch.events.GitHubBranchEvent;
+import com.github.kostyasha.github.integration.branch.events.impl.GitHubBranchCreateEvent;
 import com.github.kostyasha.github.integration.generic.GitHubTrigger;
 import hudson.model.Job;
 import hudson.util.Secret;
@@ -226,7 +228,7 @@ public class GHRule implements TestRule {
 
     public static GitHubBranchTrigger getDefaultBranchTrigger() throws ANTLRException {
         final ArrayList<GitHubBranchEvent> githubEvents = new ArrayList<>();
-        githubEvents.add(new GitHubBranchEvent());
+        githubEvents.add(new GitHubBranchCreateEvent());
 
         final GitHubBranchTrigger githubTrigger = new GitHubBranchTrigger("", GitHubPRTriggerMode.CRON, githubEvents);
         githubTrigger.setPreStatus(true);
@@ -278,7 +280,7 @@ public class GHRule implements TestRule {
         }
     }
 
-    public static void runTriggerAndWaitUntilEnd(GitHubTrigger trigger, long timeout)
+    public static void runTriggerAndWaitUntilEnd(GitHubPRTrigger trigger, long timeout)
             throws InterruptedException, IOException {
         final Job<?, ?> job = trigger.getJob();
         Objects.requireNonNull(job, "Job must exist in trigger, initialise trigger!");
@@ -295,6 +297,39 @@ public class GHRule implements TestRule {
         while (true) {
             Thread.sleep(10);
             final GitHubPRPollingLogAction prLogAction = job.getAction(GitHubPRPollingLogAction.class);
+            try {
+                if (nonNull(prLogAction)) {
+                    final String newLog = prLogAction.getLog();
+                    if (!newLog.equals(oldLog) && newLog.contains(trigger.getFinishMsg())) {
+                        return;
+                    }
+                }
+            } catch (IOException ignore) {
+            }
+
+            if (System.currentTimeMillis() - startTime > timeout) {
+                throw new AssertionError("Trigger didn't started or finished");
+            }
+        }
+    }
+
+    public static void runBranchTriggerAndWaitUntilEnd(GitHubBranchTrigger trigger, long timeout)
+            throws InterruptedException, IOException {
+        final Job<?, ?> job = trigger.getJob();
+        Objects.requireNonNull(job, "Job must exist in trigger, initialise trigger!");
+
+        String oldLog = null;
+        final GitHubBranchPollingLogAction oldAction = job.getAction(GitHubBranchPollingLogAction.class);
+        if (nonNull(oldAction)) {
+            oldLog = oldAction.getLog();
+        }
+
+        trigger.run();
+
+        long startTime = System.currentTimeMillis();
+        while (true) {
+            Thread.sleep(10);
+            final GitHubBranchPollingLogAction prLogAction = job.getAction(GitHubBranchPollingLogAction.class);
             try {
                 if (nonNull(prLogAction)) {
                     final String newLog = prLogAction.getLog();

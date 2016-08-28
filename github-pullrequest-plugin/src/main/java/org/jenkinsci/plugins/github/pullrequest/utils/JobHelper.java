@@ -6,6 +6,9 @@ import hudson.matrix.MatrixRun;
 import hudson.model.Executor;
 import hudson.model.Cause;
 import hudson.model.Job;
+import hudson.model.ParameterDefinition;
+import hudson.model.ParameterValue;
+import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.triggers.Trigger;
@@ -18,6 +21,7 @@ import org.jenkinsci.plugins.github.util.JobInfoHelpers;
 
 import javax.annotation.CheckForNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
@@ -94,4 +98,31 @@ public class JobHelper {
     public static List<CauseOfInterruption> getInterruptCauses(Executor executor) throws IllegalAccessException {
         return (List<CauseOfInterruption>) FieldUtils.readField(executor, "causes", true);
     }
+
+    /**
+     * @see jenkins.model.ParameterizedJobMixIn#getDefaultParametersValues()
+     */
+    public static List<ParameterValue> getDefaultParametersValues(Job<?, ?> job) {
+        ParametersDefinitionProperty paramDefProp = job.getProperty(ParametersDefinitionProperty.class);
+        List<ParameterValue> defValues = new ArrayList<>();
+
+        /*
+        * This check is made ONLY if someone will call this method even if isParametrized() is false.
+        */
+        if (paramDefProp == null) {
+            return defValues;
+        }
+
+        /* Scan for all parameter with an associated default values */
+        for (ParameterDefinition paramDefinition : paramDefProp.getParameterDefinitions()) {
+            ParameterValue defaultValue = paramDefinition.getDefaultParameterValue();
+
+            if (defaultValue != null) {
+                defValues.add(defaultValue);
+            }
+        }
+
+        return defValues;
+    }
+
 }

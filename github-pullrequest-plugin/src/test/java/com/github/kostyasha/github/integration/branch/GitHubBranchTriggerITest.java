@@ -20,7 +20,7 @@ public class GitHubBranchTriggerITest extends BranchITest {
 
         job.addTrigger(getDefaultBranchTrigger());
 
-        job.getBuildersList().add(new Shell("sleep 10"));
+        job.getBuildersList().add(new Shell("env && sleep 10"));
 
         job.save();
 

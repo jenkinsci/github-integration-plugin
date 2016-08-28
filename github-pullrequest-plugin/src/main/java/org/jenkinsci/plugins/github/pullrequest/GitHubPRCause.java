@@ -1,6 +1,8 @@
 package org.jenkinsci.plugins.github.pullrequest;
 
 import com.github.kostyasha.github.integration.generic.GitHubCause;
+import hudson.model.Run;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -18,10 +20,11 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.Set;
 
+import static org.apache.commons.lang3.builder.EqualsBuilder.reflectionEquals;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 
-public class GitHubPRCause extends GitHubCause {
+public class GitHubPRCause extends GitHubCause<GitHubPRCause> {
     private static final Logger LOGGER = LoggerFactory.getLogger(GitHubPRCause.class);
 
     private String headSha;
@@ -30,8 +33,7 @@ public class GitHubPRCause extends GitHubCause {
     private String targetBranch;
     private String sourceBranch;
     private String prAuthorEmail;
-    @CheckForNull
-    private String title;
+
     private String sourceRepoOwner;
     private String triggerSenderName = "";
     private String triggerSenderEmail = "";
@@ -285,21 +287,6 @@ public class GitHubPRCause extends GitHubCause {
         return reason;
     }
 
-    /**
-     * Returns the title of the cause, never null.
-     */
-    @Nonnull
-    public String getTitle() {
-        return nonNull(title) ? title : "";
-    }
-
-    /**
-     * Returns at most the first 30 characters of the title, or
-     */
-    public String getAbbreviatedTitle() {
-        return StringUtils.abbreviate(getTitle(), 30);
-    }
-
     public String getPrAuthorEmail() {
         return prAuthorEmail;
     }
@@ -319,6 +306,19 @@ public class GitHubPRCause extends GitHubCause {
     @Nonnull
     public String getCondRef() {
         return condRef;
+    }
+
+    @Override
+    public void onAddedTo(@Nonnull Run run) {
+        // move polling log from cause to action
+        try {
+            GitHubPRPollingLogAction action = new GitHubPRPollingLogAction(run);
+            FileUtils.writeStringToFile(action.getPollingLogFile(), pollingLog);
+            run.replaceAction(action);
+        } catch (IOException e) {
+            LOGGER.warn("Failed to persist the polling log", e);
+        }
+        pollingLog = null;
     }
 
     @Override
