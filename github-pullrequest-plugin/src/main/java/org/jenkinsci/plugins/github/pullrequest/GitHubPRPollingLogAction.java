@@ -12,7 +12,6 @@ import static org.apache.commons.io.IOUtils.closeQuietly;
  * @author Alina Karpovich
  */
 public class GitHubPRPollingLogAction extends GitHubPollingLogAction {
-
     public GitHubPRPollingLogAction(Run<?, ?> run) {
         super(run);
     }

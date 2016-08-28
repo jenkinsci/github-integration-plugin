@@ -76,7 +76,7 @@ import static org.jenkinsci.plugins.github.util.JobInfoHelpers.isBuildable;
  */
 public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
     private static final Logger LOGGER = LoggerFactory.getLogger(GitHubBranchTrigger.class);
-    public static final String FINISH_MSG = "Finished GitHub Push trigger check";
+    public static final String FINISH_MSG = "Finished GitHub Branch trigger check";
 
     private List<GitHubBranchEvent> events = new ArrayList<>();
 

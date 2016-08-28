@@ -54,6 +54,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.commons.io.FileUtils.writeStringToFile;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.core.Is.is;
 import static org.jenkinsci.plugins.github.config.GitHubServerConfig.loginToGithub;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 import static org.jenkinsci.plugins.github_integration.awaitility.GHRepoAppeared.ghRepoAppeared;
@@ -245,7 +246,7 @@ public class GHRule implements TestRule {
             throws IOException, GitAPIException {
         final List<Ref> refList = git.branchList().call();
         boolean exist = false;
-        for (Ref ref: refList) {
+        for (Ref ref : refList) {
             if (ref.getName().endsWith(branch)) {
                 exist = true;
                 break;
@@ -328,13 +329,15 @@ public class GHRule implements TestRule {
         trigger.run();
 
         long startTime = System.currentTimeMillis();
+        boolean found = false;
         while (true) {
-            Thread.sleep(10);
+            Thread.sleep(100);
             final GitHubBranchPollingLogAction prLogAction = job.getAction(GitHubBranchPollingLogAction.class);
             try {
                 if (nonNull(prLogAction)) {
                     final String newLog = prLogAction.getLog();
                     if (!newLog.equals(oldLog) && newLog.contains(trigger.getFinishMsg())) {
+                        found = true;
                         return;
                     }
                 }
@@ -342,7 +345,8 @@ public class GHRule implements TestRule {
             }
 
             if (System.currentTimeMillis() - startTime > timeout) {
-                throw new AssertionError("Trigger didn't started or finished");
+                assertThat("Job has no action!", oldAction, notNullValue());
+                assertThat("Trigger didn't started or finished", found, is(true));
             }
         }
     }

@@ -49,17 +49,23 @@ public class BranchITest {
 
 
     public void smokeTest(Job<?, ?> job) throws Exception {
+        GitHubBranchTrigger trigger;
         // fails with workflow
-        if (/**job instanceof FreeStyleProject || */job instanceof MatrixProject) {
+        if (job instanceof FreeStyleProject || job instanceof MatrixProject) {
             jRule.configRoundtrip(job); // activate trigger
+            trigger = ghBranchTriggerFromJob(job);
         } else {
             // hack configRountrip that doesn't work with workflow
-            ghBranchTriggerFromJob(job).start(job, true);
+            if (job instanceof FreeStyleProject) {
+                final FreeStyleProject freeStyleProject = (FreeStyleProject) job;
+                trigger = freeStyleProject.getTrigger(GitHubBranchTrigger.class);
+            } else {
+                trigger = ghBranchTriggerFromJob(job);
+            }
+            trigger.start(job, true);
         }
 
-        GitHubBranchTrigger trigger = ghBranchTriggerFromJob(job);
-
-        runBranchTriggerAndWaitUntilEnd(trigger, 10 * GH_API_DELAY);
+        runBranchTriggerAndWaitUntilEnd(trigger, 100 * GH_API_DELAY);
 
         jRule.waitUntilNoActivity();
 
@@ -72,7 +78,7 @@ public class BranchITest {
 
         assertThat("Action storage should be empty", branches.entrySet(), Matchers.hasSize(3));
 
-        runBranchTriggerAndWaitUntilEnd(trigger, 10 * GH_API_DELAY);
+        runBranchTriggerAndWaitUntilEnd(trigger, 100 * GH_API_DELAY);
 
         jRule.waitUntilNoActivity();
 

@@ -16,6 +16,10 @@ public class GitHubBranchPollingLogAction extends GitHubPollingLogAction {
         super(run);
     }
 
+    public String getPollingFileName() {
+        return "github-branch-polling.log";
+    }
+
     @Override
     public String getIconFileName() {
         return "clipboard.png";
@@ -29,9 +33,5 @@ public class GitHubBranchPollingLogAction extends GitHubPollingLogAction {
     @Override
     public String getUrlName() {
         return "github-branch-polling";
-    }
-
-    public String getPollingFileName() {
-        return "github-branch-polling.log";
     }
 }

@@ -25,6 +25,11 @@ public class GitHubBranchCause extends GitHubCause<GitHubBranchCause> {
     public GitHubBranchCause(GHBranch remoteBranch) {
         this.branchName = remoteBranch.getName();
         this.headSha = remoteBranch.getSHA1();
+        try {
+            this.htmlUrl = new URL(remoteBranch.getOwner().getHtmlUrl().toString() + "/" + branchName);
+        } catch (MalformedURLException ex) {
+            LOG.error("Can't make URL for {}", remoteBranch, ex);
+        }
     }
 
     public GitHubBranchCause(String reason, String branch, String headSha, boolean skip) {
@@ -35,6 +40,8 @@ public class GitHubBranchCause extends GitHubCause<GitHubBranchCause> {
     }
 
     public GitHubBranchCause(GHBranch remoteBranch, String reason, boolean skip) {
+        this.reason = reason;
+        this.skip = skip;
         this.branchName = remoteBranch.getName();
         this.headSha = remoteBranch.getSHA1();
         try {
