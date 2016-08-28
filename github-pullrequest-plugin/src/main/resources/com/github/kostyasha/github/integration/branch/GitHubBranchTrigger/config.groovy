@@ -1,13 +1,13 @@
-package com.github.kostyasha.github.integration.branch.GitHubPushTrigger
+package com.github.kostyasha.github.integration.branch.GitHubBranchTrigger
 
-import com.cloudbees.jenkins.GitHubPushTrigger
+import com.github.kostyasha.github.integration.branch.GitHubBranchTrigger
 import hudson.triggers.TimerTrigger
 import lib.FormTagLib
 
 def f = namespace(FormTagLib);
 
 if (instance == null) {
-    instance = new GitHubPushTrigger();
+    instance = new GitHubBranchTrigger();
 }
 
 f.block {
@@ -33,6 +33,14 @@ f.block {
 
         f.entry(title: "Skip older PRs on first run", field: "skipFirstRun") {
             f.checkbox()
+        }
+
+        f.entry(title: _("Trigger Events"), help: descriptor.getHelpFile('events')) {
+            f.hetero_list(name: "events",
+                    items: instance.events,
+                    descriptors: descriptor.getEventDescriptors(),
+                    hasHeader: true
+            )
         }
 
         f.optionalProperty(title: "Experimental: User Restriction", field: "userRestriction")

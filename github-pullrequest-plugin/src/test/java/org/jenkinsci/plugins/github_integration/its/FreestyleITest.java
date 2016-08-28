@@ -9,7 +9,7 @@ import org.jenkinsci.plugins.github.pullrequest.publishers.impl.GitHubPRCommentP
 import org.junit.Test;
 
 import static org.jenkinsci.plugins.github_integration.junit.GHRule.getPreconfiguredProperty;
-import static org.jenkinsci.plugins.github_integration.junit.GHRule.getPreconfiguredTrigger;
+import static org.jenkinsci.plugins.github_integration.junit.GHRule.getPreconfiguredPRTrigger;
 
 /**
  * @author Kanstantsin Shautsou
@@ -23,7 +23,7 @@ public class FreestyleITest extends AbstractPRTest {
 
         job.addProperty(getPreconfiguredProperty(ghRule.getGhRepo()));
 
-        job.addTrigger(getPreconfiguredTrigger());
+        job.addTrigger(getPreconfiguredPRTrigger());
 
         job.getBuildersList().add(new GitHubPRStatusBuilder());
         job.getBuildersList().add(new Shell("sleep 10"));

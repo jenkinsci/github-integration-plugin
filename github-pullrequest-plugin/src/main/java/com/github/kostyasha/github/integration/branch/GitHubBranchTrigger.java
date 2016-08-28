@@ -5,6 +5,7 @@ import com.cloudbees.jenkins.GitHubRepositoryName;
 import com.cloudbees.jenkins.GitHubWebHook;
 import com.coravy.hudson.plugins.github.GithubProjectProperty;
 import com.github.kostyasha.github.integration.branch.events.GitHubBranchEvent;
+import com.github.kostyasha.github.integration.branch.events.GitHubBranchEventDescriptor;
 import com.github.kostyasha.github.integration.branch.trigger.JobRunnerForBranchCause;
 import com.github.kostyasha.github.integration.generic.GitHubTrigger;
 import hudson.Extension;
@@ -96,6 +97,11 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
     @CheckForNull
     private transient GitHubBranchPollingLogAction pollingLogAction;
 
+    @Override
+    public String getFinishMsg() {
+        return FINISH_MSG;
+    }
+
     /**
      * For groovy UI
      */
@@ -104,9 +110,11 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
     }
 
     @DataBoundConstructor
-    public GitHubBranchTrigger(String spec, GitHubPRTriggerMode triggerMode) throws ANTLRException {
+    public GitHubBranchTrigger(String spec, GitHubPRTriggerMode triggerMode, List<GitHubBranchEvent> events)
+            throws ANTLRException {
         super(spec);
         this.triggerMode = triggerMode;
+        this.events = events;
     }
 
     @DataBoundSetter
@@ -156,6 +164,15 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
 
     public GitHubPRBranchRestriction getBranchRestriction() {
         return branchRestriction;
+    }
+
+    @CheckForNull
+    public List<GitHubBranchEvent> getEvents() {
+        return events;
+    }
+
+    public void setEvents(List<GitHubBranchEvent> events) {
+        this.events = events;
     }
 
     @Override
@@ -388,7 +405,7 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
 
         @Override
         public String getDisplayName() {
-            return "Experimental: Build GitHub branches";
+            return "Experimental: Run GitHub Branches";
         }
 
         @Override
@@ -398,6 +415,12 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
             save();
             return super.configure(req, formData);
         }
+
+        // list all available descriptors for choosing in job configuration
+        public List<GitHubBranchEventDescriptor> getEventDescriptors() {
+            return GitHubBranchEventDescriptor.all();
+        }
+
 
         public static DescriptorImpl get() {
             return Trigger.all().get(DescriptorImpl.class);

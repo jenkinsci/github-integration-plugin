@@ -8,6 +8,11 @@ import hudson.triggers.Trigger;
  * @author Kanstantsin Shautsou
  */
 public abstract class GitHubTrigger<T extends GitHubTrigger<T>> extends Trigger<Job<?, ?>> {
+
+    public abstract String getFinishMsg();
+
+    public abstract Job<?, ?> getJob();
+
     protected GitHubTrigger(String cronTabSpec) throws ANTLRException {
         super(cronTabSpec);
     }

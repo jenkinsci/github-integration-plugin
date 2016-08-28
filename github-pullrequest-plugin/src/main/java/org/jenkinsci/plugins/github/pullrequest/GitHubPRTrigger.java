@@ -438,6 +438,11 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
         }
     }
 
+    @Override
+    public String getFinishMsg() {
+        return FINISH_MSG;
+    }
+
     @CheckForNull
     public Job<?, ?> getJob() {
         return job;
@@ -462,7 +467,7 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
 
         @Override
         public String getDisplayName() {
-            return "Build GitHub pull requests";
+            return "Build GitHub Pull Requests";
         }
 
         @Override

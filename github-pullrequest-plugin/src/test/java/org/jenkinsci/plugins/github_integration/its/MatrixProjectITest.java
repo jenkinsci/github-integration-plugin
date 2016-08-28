@@ -11,7 +11,7 @@ import org.jenkinsci.plugins.github.pullrequest.publishers.impl.GitHubPRCommentP
 import org.junit.Test;
 
 import static org.jenkinsci.plugins.github_integration.junit.GHRule.getPreconfiguredProperty;
-import static org.jenkinsci.plugins.github_integration.junit.GHRule.getPreconfiguredTrigger;
+import static org.jenkinsci.plugins.github_integration.junit.GHRule.getPreconfiguredPRTrigger;
 
 /**
  * @author Kanstantsin Shautsou
@@ -22,7 +22,7 @@ public class MatrixProjectITest extends AbstractPRTest {
     public void testChildStatuses() throws Exception {
         final MatrixProject matrixProject = j.jenkins.createProject(MatrixProject.class, "matrix-project");
 
-        matrixProject.addTrigger(getPreconfiguredTrigger());
+        matrixProject.addTrigger(getPreconfiguredPRTrigger());
         matrixProject.addProperty(getPreconfiguredProperty(ghRule.getGhRepo()));
 
         matrixProject.getBuildersList().add(new GitHubPRStatusBuilder());

@@ -18,7 +18,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.jenkinsci.plugins.github.pullrequest.util.TestUtil.classpath;
 import static org.jenkinsci.plugins.github_integration.hamcrest.CommitStatusMatcher.commitStatus;
 import static org.jenkinsci.plugins.github_integration.junit.GHRule.getPreconfiguredProperty;
-import static org.jenkinsci.plugins.github_integration.junit.GHRule.getPreconfiguredTrigger;
+import static org.jenkinsci.plugins.github_integration.junit.GHRule.getPreconfiguredPRTrigger;
 
 
 /**
@@ -30,7 +30,7 @@ public class WorkflowITest extends AbstractPRTest {
     public void workflowTest() throws Exception {
         final WorkflowJob workflowJob = j.jenkins.createProject(WorkflowJob.class, "it-job");
 
-        workflowJob.addTrigger(getPreconfiguredTrigger());
+        workflowJob.addTrigger(getPreconfiguredPRTrigger());
         workflowJob.addProperty(getPreconfiguredProperty(ghRule.getGhRepo()));
         workflowJob.setQuietPeriod(10);
 
@@ -46,7 +46,7 @@ public class WorkflowITest extends AbstractPRTest {
     public void testContextStatuses() throws Exception {
         final WorkflowJob workflowJob = j.jenkins.createProject(WorkflowJob.class, "testContextStatuses");
 
-        workflowJob.addTrigger(getPreconfiguredTrigger());
+        workflowJob.addTrigger(getPreconfiguredPRTrigger());
         workflowJob.addProperty(getPreconfiguredProperty(ghRule.getGhRepo()));
 
         workflowJob.setDefinition(
