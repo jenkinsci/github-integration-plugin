@@ -293,6 +293,7 @@ public class GHRule implements TestRule {
 
         trigger.run();
 
+        // TODO replace with awaitility
         long startTime = System.currentTimeMillis();
         while (true) {
             Thread.sleep(10);

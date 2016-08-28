@@ -22,6 +22,11 @@ public class GitHubBranchCause extends GitHubCause<GitHubBranchCause> {
     private final String branchName;
     private final String headSha;
 
+    public GitHubBranchCause(GHBranch remoteBranch) {
+        this.branchName = remoteBranch.getName();
+        this.headSha = remoteBranch.getSHA1();
+    }
+
     public GitHubBranchCause(String reason, String branch, String headSha, boolean skip) {
         this.reason = reason;
         this.branchName = branch;
@@ -40,21 +45,21 @@ public class GitHubBranchCause extends GitHubCause<GitHubBranchCause> {
     }
 
     @Override
+    public String getShortDescription() {
+        return "GitHub Branch #<a href=\"" + htmlUrl + "\">" + branchName + "</a>, " + reason;
+    }
+
+    @Override
     public void onAddedTo(@Nonnull Run run) {
         // move polling log from cause to action
         try {
             GitHubBranchPollingLogAction action = new GitHubBranchPollingLogAction(run);
             writeStringToFile(action.getPollingLogFile(), pollingLog);
             run.replaceAction(action);
-        } catch (IOException e) {
-            LOG.warn("Failed to persist the polling log", e);
+        } catch (IOException ex) {
+            LOG.warn("Failed to persist the polling log", ex);
         }
         pollingLog = null;
-    }
-
-    @Override
-    public String getShortDescription() {
-        return "Short description";
     }
 
     public String getBranchName() {

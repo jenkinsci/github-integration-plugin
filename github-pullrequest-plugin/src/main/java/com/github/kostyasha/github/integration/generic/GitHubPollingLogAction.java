@@ -40,6 +40,8 @@ public abstract class GitHubPollingLogAction implements MatrixChildAction, RunAc
         this.run = run;
     }
 
+    public abstract String getPollingFileName();
+
     @CheckForNull
     public Job<?, ?> getJob() {
         return job;
@@ -58,6 +60,9 @@ public abstract class GitHubPollingLogAction implements MatrixChildAction, RunAc
         return getPollingLogFile() != null && getPollingLogFile().isFile();
     }
 
+    /**
+     * TODO is it secure?
+     */
     public void doPollingLog(StaplerRequest req, StaplerResponse rsp) throws IOException {
         rsp.setContentType("text/plain;charset=UTF-8");
         // Prevent jelly from flushing stream so Content-Length header can be added afterwards
@@ -71,10 +76,6 @@ public abstract class GitHubPollingLogAction implements MatrixChildAction, RunAc
 
     public AnnotatedLargeText getPollingLogText() {
         return new AnnotatedLargeText<>(getPollingLogFile(), Charset.defaultCharset(), true, this);
-    }
-
-    public String getPollingFileName() {
-        return "github-pullrequest-polling.log";
     }
 
     /**
@@ -100,7 +101,7 @@ public abstract class GitHubPollingLogAction implements MatrixChildAction, RunAc
             throw new IllegalStateException("Can't get polling log file: no run or job initialised");
         }
 
-        return new File(pollingFile, "github-pullrequest-polling.log");
+        return new File(pollingFile, getPollingFileName());
     }
 
     @Override
