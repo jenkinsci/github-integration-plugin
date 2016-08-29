@@ -1,10 +1,8 @@
 package org.jenkinsci.plugins.github.pullrequest;
 
+import com.github.kostyasha.github.integration.generic.GitHubPollingLogAction;
 import hudson.model.Job;
 import hudson.model.Run;
-import com.github.kostyasha.github.integration.generic.GitHubPollingLogAction;
-
-import static org.apache.commons.io.IOUtils.closeQuietly;
 
 /**
  * Link for project page, shows triggered polling log
