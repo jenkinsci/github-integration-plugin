@@ -3,7 +3,6 @@ package org.jenkinsci.plugins.github.pullrequest;
 import com.github.kostyasha.github.integration.generic.GitHubCause;
 import hudson.model.Run;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -13,14 +12,12 @@ import org.kohsuke.github.GHUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Set;
 
-import static org.apache.commons.lang3.builder.EqualsBuilder.reflectionEquals;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 

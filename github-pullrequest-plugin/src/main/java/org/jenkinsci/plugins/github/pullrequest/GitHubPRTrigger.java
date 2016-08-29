@@ -3,6 +3,7 @@ package org.jenkinsci.plugins.github.pullrequest;
 import antlr.ANTLRException;
 import com.cloudbees.jenkins.GitHubRepositoryName;
 import com.cloudbees.jenkins.GitHubWebHook;
+import com.github.kostyasha.github.integration.generic.GitHubTrigger;
 import com.github.kostyasha.github.integration.generic.GitHubTriggerDescriptor;
 import hudson.Extension;
 import hudson.Util;
@@ -18,7 +19,6 @@ import org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRBranchRestr
 import org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRUserRestriction;
 import org.jenkinsci.plugins.github.pullrequest.trigger.JobRunnerForCause;
 import org.jenkinsci.plugins.github.pullrequest.utils.LoggingTaskListenerWrapper;
-import com.github.kostyasha.github.integration.generic.GitHubTrigger;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.github.GHIssueState;
@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.Set;
 
 import static com.google.common.base.Charsets.UTF_8;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Predicates.and;
 import static com.google.common.base.Predicates.in;

@@ -1,8 +1,6 @@
 package org.jenkinsci.plugins.github.pullrequest;
 
 import com.github.kostyasha.github.integration.generic.GitHubBadgeAction;
-import hudson.matrix.MatrixChildAction;
-import hudson.model.BuildBadgeAction;
 
 /**
  * @author Kanstantsin Shautsou
