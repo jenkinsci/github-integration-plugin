@@ -13,7 +13,7 @@ public class GitHubBranchBadgeAction extends GitHubBadgeAction<GitHubBranchCause
         super(cause);
         this.branchName = cause.getBranchName();
     }
-    
+
     public String getBranchName() {
         return branchName;
     }

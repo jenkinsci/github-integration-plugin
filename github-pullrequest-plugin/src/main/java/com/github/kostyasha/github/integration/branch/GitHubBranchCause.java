@@ -26,26 +26,26 @@ public class GitHubBranchCause extends GitHubCause<GitHubBranchCause> {
         this.branchName = remoteBranch.getName();
         this.headSha = remoteBranch.getSHA1();
         try {
-            this.htmlUrl = new URL(remoteBranch.getOwner().getHtmlUrl().toString() + "/" + branchName);
+            withHtmlUrl(new URL(remoteBranch.getOwner().getHtmlUrl().toString() + "/" + branchName));
         } catch (MalformedURLException ex) {
             LOG.error("Can't make URL for {}", remoteBranch, ex);
         }
     }
 
     public GitHubBranchCause(String reason, String branch, String headSha, boolean skip) {
-        this.reason = reason;
+        withReason(reason);
         this.branchName = branch;
         this.headSha = headSha;
-        this.skip = skip;
+        withSkip(skip);
     }
 
     public GitHubBranchCause(GHBranch remoteBranch, String reason, boolean skip) {
-        this.reason = reason;
-        this.skip = skip;
+        withReason(reason);
+        withSkip(skip);
         this.branchName = remoteBranch.getName();
         this.headSha = remoteBranch.getSHA1();
         try {
-            this.htmlUrl = new URL(remoteBranch.getOwner().getHtmlUrl().toString() + "/" + branchName);
+            withHtmlUrl(new URL(remoteBranch.getOwner().getHtmlUrl().toString() + "/" + branchName));
         } catch (MalformedURLException ex) {
             LOG.error("Can't make URL for {}", remoteBranch, ex);
         }
@@ -53,7 +53,7 @@ public class GitHubBranchCause extends GitHubCause<GitHubBranchCause> {
 
     @Override
     public String getShortDescription() {
-        return "GitHub Branch #<a href=\"" + htmlUrl + "\">" + branchName + "</a>, " + reason;
+        return "GitHub Branch #<a href=\"" + getHtmlUrl() + "\">" + branchName + "</a>, " + getReason();
     }
 
     @Override

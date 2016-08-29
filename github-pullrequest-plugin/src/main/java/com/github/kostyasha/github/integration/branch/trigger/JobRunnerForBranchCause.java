@@ -1,6 +1,8 @@
 package com.github.kostyasha.github.integration.branch.trigger;
 
 import com.github.kostyasha.github.integration.branch.GitHubBranchBadgeAction;
+import com.github.kostyasha.github.integration.branch.GitHubBranchCause;
+import com.github.kostyasha.github.integration.branch.GitHubBranchTrigger;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
@@ -12,14 +14,11 @@ import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.Queue;
 import hudson.model.queue.QueueTaskFuture;
-import com.github.kostyasha.github.integration.branch.GitHubBranchCause;
-import com.github.kostyasha.github.integration.branch.GitHubBranchTrigger;
 import org.kohsuke.github.GHCommitState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.cloudbees.jenkins.GitHubWebHook.getJenkinsInstance;

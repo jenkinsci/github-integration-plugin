@@ -38,7 +38,6 @@ public class GitHubPRCause extends GitHubCause<GitHubPRCause> {
     private String triggerSenderName = "";
     private String triggerSenderEmail = "";
     private Set<String> labels;
-    private String reason;
     /**
      * In case triggered because of commit.
      * See {@link org.jenkinsci.plugins.github.pullrequest.events.impl.GitHubPROpenEvent}
@@ -77,40 +76,40 @@ public class GitHubPRCause extends GitHubCause<GitHubPRCause> {
                          GHUser triggerSender, boolean skip, String reason,
                          String commitAuthorName, String commitAuthorEmail,
                          String state) {
-            //CHECKSTYLE:ON
-            this.headSha = headSha;
-            this.number = number;
-            this.mergeable = mergeable;
-            this.targetBranch = targetBranch;
-            this.sourceBranch = sourceBranch;
-            this.prAuthorEmail = prAuthorEmail;
-            this.title = title;
-            this.htmlUrl = htmlUrl;
-            this.sourceRepoOwner = sourceRepoOwner;
-            this.labels = labels;
-            this.skip = skip;
-            this.reason = reason;
-            this.commitAuthorName = commitAuthorName;
-            this.commitAuthorEmail = commitAuthorEmail;
+        //CHECKSTYLE:ON
+        this.headSha = headSha;
+        this.number = number;
+        this.mergeable = mergeable;
+        this.targetBranch = targetBranch;
+        this.sourceBranch = sourceBranch;
+        this.prAuthorEmail = prAuthorEmail;
+        this.title = title;
+        withHtmlUrl(htmlUrl);
+        this.sourceRepoOwner = sourceRepoOwner;
+        this.labels = labels;
+        withSkip(skip);
+        withReason(reason);
+        this.commitAuthorName = commitAuthorName;
+        this.commitAuthorEmail = commitAuthorEmail;
 
-            if (nonNull(triggerSender)) {
-                try {
-                    this.triggerSenderName = triggerSender.getName();
-                } catch (IOException e) {
-                    LOGGER.error("Can't get trigger sender name from remote PR");
-                }
-
-                try {
-                    this.triggerSenderEmail = triggerSender.getEmail();
-                } catch (IOException e) {
-                    LOGGER.error("Can't get trigger sender email from remote PR");
-                }
+        if (nonNull(triggerSender)) {
+            try {
+                this.triggerSenderName = triggerSender.getName();
+            } catch (IOException e) {
+                LOGGER.error("Can't get trigger sender name from remote PR");
             }
 
-            this.condRef = mergeable ? "merge" : "head";
-
-            this.state = state;
+            try {
+                this.triggerSenderEmail = triggerSender.getEmail();
+            } catch (IOException e) {
+                LOGGER.error("Can't get trigger sender email from remote PR");
+            }
         }
+
+        this.condRef = mergeable ? "merge" : "head";
+
+        this.state = state;
+    }
 
 
     public static GitHubPRCause newGitHubPRCause() {
@@ -206,14 +205,6 @@ public class GitHubPRCause extends GitHubCause<GitHubPRCause> {
     }
 
     /**
-     * @see #reason
-     */
-    public GitHubPRCause withReason(String reason) {
-        this.reason = reason;
-        return this;
-    }
-
-    /**
      * @see #commitAuthorName
      */
     public GitHubPRCause withCommitAuthorName(String commitAuthorName) {
@@ -239,7 +230,7 @@ public class GitHubPRCause extends GitHubCause<GitHubPRCause> {
 
     @Override
     public String getShortDescription() {
-        return "GitHub PR #<a href=\"" + htmlUrl + "\">" + number + "</a>, " + reason;
+        return "GitHub PR #<a href=\"" + getHtmlUrl() + "\">" + number + "</a>, " + getReason();
     }
 
     public String getHeadSha() {
@@ -281,10 +272,6 @@ public class GitHubPRCause extends GitHubCause<GitHubPRCause> {
 
     public String getTriggerSenderEmail() {
         return triggerSenderEmail;
-    }
-
-    public String getReason() {
-        return reason;
     }
 
     public String getPrAuthorEmail() {

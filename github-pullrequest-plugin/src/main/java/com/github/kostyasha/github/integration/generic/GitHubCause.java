@@ -20,9 +20,9 @@ import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull
 public abstract class GitHubCause<T extends GitHubCause<T>> extends Cause {
     private static final Logger LOG = LoggerFactory.getLogger(GitHubCause.class);
 
-    protected boolean skip;
-    protected String reason;
-    protected URL htmlUrl;
+    private boolean skip;
+    private String reason;
+    private URL htmlUrl;
     @CheckForNull
     protected String title;
 
@@ -71,6 +71,14 @@ public abstract class GitHubCause<T extends GitHubCause<T>> extends Cause {
 
     public String getReason() {
         return reason;
+    }
+
+    /**
+     * @see #reason
+     */
+    public GitHubCause<T> withReason(String reason) {
+        this.reason = reason;
+        return this;
     }
 
     /**

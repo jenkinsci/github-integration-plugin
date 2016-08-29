@@ -5,17 +5,12 @@ import com.cloudbees.jenkins.GitHubRepositoryName;
 import com.coravy.hudson.plugins.github.GithubProjectProperty;
 import hudson.model.Job;
 import hudson.triggers.Trigger;
-import hudson.triggers.TriggerDescriptor;
-import hudson.util.DescriptorList;
-import jenkins.model.Jenkins;
-import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTriggerMode;
 import org.kohsuke.github.GHRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.CheckForNull;
-
 import java.io.IOException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
