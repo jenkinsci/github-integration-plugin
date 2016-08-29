@@ -32,7 +32,7 @@
 
     <properties>
         <jenkins.parent.version>1.625.3</jenkins.parent.version>
-        <maven-hpi-plugin.version>1.115</maven-hpi-plugin.version>
+        <maven-hpi-plugin.version>1.119</maven-hpi-plugin.version>
         <ignore.random.failures>true</ignore.random.failures>
     </properties>
 

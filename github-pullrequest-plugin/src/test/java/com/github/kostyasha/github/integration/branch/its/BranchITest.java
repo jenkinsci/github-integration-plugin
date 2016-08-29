@@ -1,5 +1,8 @@
-package com.github.kostyasha.github.integration.branch;
+package com.github.kostyasha.github.integration.branch.its;
 
+import com.github.kostyasha.github.integration.branch.GitHubBranchRepository;
+import com.github.kostyasha.github.integration.branch.GitHubBranchTrigger;
+import com.github.kostyasha.github.integration.branch.GitHubLocalBranch;
 import hudson.matrix.MatrixProject;
 import hudson.model.FreeStyleProject;
 import hudson.model.Job;

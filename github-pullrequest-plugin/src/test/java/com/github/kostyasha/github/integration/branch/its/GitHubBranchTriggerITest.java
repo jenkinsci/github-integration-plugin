@@ -1,4 +1,4 @@
-package com.github.kostyasha.github.integration.branch;
+package com.github.kostyasha.github.integration.branch.its;
 
 import hudson.model.FreeStyleProject;
 import hudson.tasks.Shell;
