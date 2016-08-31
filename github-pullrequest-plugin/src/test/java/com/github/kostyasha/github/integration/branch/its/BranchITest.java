@@ -24,6 +24,7 @@ import static com.github.kostyasha.github.integration.branch.utils.JobHelper.ghB
 import static com.jayway.awaitility.Awaitility.await;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -72,15 +73,17 @@ public class BranchITest {
 
         jRule.waitUntilNoActivity();
 
-        assertThat(job.getLastBuild(), is(nullValue()));
+        assertThat(job.getBuilds(), hasSize(3));
 
         GitHubBranchRepository ghRepository = job.getAction(GitHubBranchRepository.class);
         assertThat("Action storage should be available", ghRepository, notNullValue());
 
         Map<String, GitHubLocalBranch> branches = ghRepository.getBranches();
 
-        assertThat("Action storage should be empty", branches.entrySet(), Matchers.hasSize(3));
+        assertThat("Action storage should not to be empty", branches.entrySet(), Matchers.hasSize(3));
 
+
+        // TODO CREATE 3d branch and push
         runBranchTriggerAndWaitUntilEnd(trigger, 100 * GH_API_DELAY);
 
         jRule.waitUntilNoActivity();

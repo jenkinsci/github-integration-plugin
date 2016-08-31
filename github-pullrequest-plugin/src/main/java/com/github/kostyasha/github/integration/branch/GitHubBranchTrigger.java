@@ -341,11 +341,19 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
 
     @Extension
     public static class DescriptorImpl extends TriggerDescriptor {
-        private final transient SequentialExecutionQueue queue =
+        private transient SequentialExecutionQueue queue =
                 new SequentialExecutionQueue(Jenkins.MasterComputer.threadPoolForRemoting);
 
         public DescriptorImpl() {
             load();
+        }
+
+        @Nonnull
+        public SequentialExecutionQueue getQueue() {
+            if (queue == null) {
+                queue = new SequentialExecutionQueue(Jenkins.MasterComputer.threadPoolForRemoting);
+            }
+            return queue;
         }
 
         @Override
