@@ -27,7 +27,7 @@ import static org.jenkinsci.plugins.github.pullrequest.GitHubPRCause.newGitHubPR
 /**
  * @author Kanstantsin Shautsou
  */
-public class JobRunnerForCauseTest {
+public abstract class JobRunnerForCauseTest {
 
     @Rule
     public JenkinsRule j = new JenkinsRule();
