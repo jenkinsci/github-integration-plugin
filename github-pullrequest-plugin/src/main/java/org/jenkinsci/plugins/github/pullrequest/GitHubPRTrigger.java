@@ -120,28 +120,13 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
                            GitHubPRTriggerMode triggerMode,
                            List<GitHubPREvent> events) throws ANTLRException {
         super(spec);
-        this.triggerMode = triggerMode;
+        setTriggerMode(triggerMode);
         this.events = Util.fixNull(events);
     }
 
     @DataBoundSetter
     public void setPreStatus(boolean preStatus) {
         this.preStatus = preStatus;
-    }
-
-    @DataBoundSetter
-    public void setCancelQueued(boolean cancelQueued) {
-        this.cancelQueued = cancelQueued;
-    }
-
-    @DataBoundSetter
-    public void setAbortRunning(boolean abortRunning) {
-        this.abortRunning = abortRunning;
-    }
-
-    @DataBoundSetter
-    public void setSkipFirstRun(boolean skipFirstRun) {
-        this.skipFirstRun = skipFirstRun;
     }
 
     @DataBoundSetter
@@ -156,22 +141,6 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
 
     public boolean isPreStatus() {
         return preStatus;
-    }
-
-    public boolean isCancelQueued() {
-        return cancelQueued;
-    }
-
-    public boolean isAbortRunning() {
-        return abortRunning;
-    }
-
-    public boolean isSkipFirstRun() {
-        return skipFirstRun;
-    }
-
-    public GitHubPRTriggerMode getTriggerMode() {
-        return triggerMode;
     }
 
     public List<GitHubPREvent> getEvents() {

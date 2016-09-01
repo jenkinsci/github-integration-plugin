@@ -4,6 +4,7 @@ import com.github.kostyasha.github.integration.branch.GitHubBranch;
 import hudson.model.TaskListener;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHRepository;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -28,6 +29,9 @@ public class GitHubBranchCreateEventTest {
     private GitHubBranch localBranch;
     @Mock
     private GHRepository repository;
+
+    @Mock
+    private GHBranch remoteBranch;
     @Mock
     private TaskListener listener;
     @Mock
@@ -39,6 +43,17 @@ public class GitHubBranchCreateEventTest {
      */
     @Test
     public void secondOfThreeLabelsWasAdded() throws IOException {
+        when(localBranch.getName()).thenReturn("branch-2");
+        when(remoteBranch.getName()).thenReturn("branch-1");
 
+
+    }
+
+
+    private void commonExpectations(Set<String> localLabels) throws IOException {
+
+        when(remoteBranch.getOwner()).thenReturn(repository);
+        when(repository.getOwnerName()).thenReturn("ownerName");
+        when(listener.getLogger()).thenReturn(logger);
     }
 }

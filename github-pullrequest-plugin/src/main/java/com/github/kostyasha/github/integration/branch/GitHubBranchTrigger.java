@@ -103,17 +103,7 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
         this.preStatus = preStatus;
     }
 
-    @DataBoundSetter
-    public void setCancelQueued(boolean cancelQueued) {
-        this.cancelQueued = cancelQueued;
-    }
-
-    @DataBoundSetter
-    public void setSkipFirstRun(boolean skipFirstRun) {
-        this.skipFirstRun = skipFirstRun;
-    }
-
-    @DataBoundSetter
+   @DataBoundSetter
     public void setUserRestriction(GitHubPRUserRestriction userRestriction) {
         this.userRestriction = userRestriction;
     }
@@ -125,18 +115,6 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
 
     public boolean isPreStatus() {
         return preStatus;
-    }
-
-    public boolean isCancelQueued() {
-        return cancelQueued;
-    }
-
-    public boolean isSkipFirstRun() {
-        return skipFirstRun;
-    }
-
-    public GitHubPRTriggerMode getTriggerMode() {
-        return triggerMode;
     }
 
     public GitHubPRUserRestriction getUserRestriction() {

@@ -8,6 +8,7 @@ import hudson.model.Job;
 import hudson.triggers.Trigger;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTriggerMode;
 import org.kohsuke.github.GHRepository;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +32,7 @@ public abstract class GitHubTrigger<T extends GitHubTrigger<T>> extends Trigger<
     private static final Logger LOG = LoggerFactory.getLogger(GitHubTrigger.class);
 
     @CheckForNull
-    protected GitHubPRTriggerMode triggerMode = CRON;
+    private GitHubPRTriggerMode triggerMode = CRON;
 
     /**
      * Cancel queued runs for specific kind (i.e. PR by number, branch by name).
@@ -51,6 +52,57 @@ public abstract class GitHubTrigger<T extends GitHubTrigger<T>> extends Trigger<
     public GitHubTrigger(String spec, GitHubPRTriggerMode triggerMode) throws ANTLRException {
         super(spec);
         this.triggerMode = triggerMode;
+    }
+
+    public GitHubPRTriggerMode getTriggerMode() {
+        return triggerMode;
+    }
+
+    public void setTriggerMode(GitHubPRTriggerMode triggerMode) {
+        this.triggerMode = triggerMode;
+    }
+
+    public boolean isCancelQueued() {
+        return cancelQueued;
+    }
+
+    @DataBoundSetter
+    public void setCancelQueued(boolean cancelQueued) {
+        this.cancelQueued = cancelQueued;
+    }
+
+    public boolean isAbortRunning() {
+        return abortRunning;
+    }
+
+    @DataBoundSetter
+    public void setAbortRunning(boolean abortRunning) {
+        this.abortRunning = abortRunning;
+    }
+
+    public boolean isSkipFirstRun() {
+        return skipFirstRun;
+    }
+
+    @DataBoundSetter
+    public void setSkipFirstRun(boolean skipFirstRun) {
+        this.skipFirstRun = skipFirstRun;
+    }
+
+    public GitHubRepositoryName getRepoName() {
+        return repoName;
+    }
+
+    public void setRepoName(GitHubRepositoryName repoName) {
+        this.repoName = repoName;
+    }
+
+    public GHRepository getRemoteRepository() {
+        return remoteRepository;
+    }
+
+    public void setRemoteRepository(GHRepository remoteRepository) {
+        this.remoteRepository = remoteRepository;
     }
 
     @Override

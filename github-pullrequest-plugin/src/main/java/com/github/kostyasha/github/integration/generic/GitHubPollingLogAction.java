@@ -27,10 +27,10 @@ import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull
  */
 public abstract class GitHubPollingLogAction implements MatrixChildAction, RunAction2 {
     @CheckForNull
-    protected transient Job<?, ?> job;
+    private transient Job<?, ?> job;
 
     @CheckForNull
-    protected transient Run<?, ?> run;
+    private transient Run<?, ?> run;
 
     public GitHubPollingLogAction(Job<?, ?> job) {
         this.job = job;
@@ -47,9 +47,17 @@ public abstract class GitHubPollingLogAction implements MatrixChildAction, RunAc
         return job;
     }
 
+    public void setJob(Job<?, ?> job) {
+        this.job = job;
+    }
+
     @CheckForNull
     public Run<?, ?> getRun() {
         return run;
+    }
+
+    public void setRun(Run<?, ?> run) {
+        this.run = run;
     }
 
     public String getLog() throws IOException {
