@@ -1,23 +1,17 @@
 package org.jenkinsci.plugins.github.pullrequest;
 
 import com.cloudbees.jenkins.GitHubWebHook;
-import hudson.BulkChange;
+import com.github.kostyasha.github.integration.generic.GitHubRepository;
 import hudson.Functions;
 import hudson.XmlFile;
-import hudson.model.BuildBadgeAction;
-import hudson.model.CauseAction;
 import hudson.model.Item;
 import hudson.model.Job;
-import hudson.model.ParametersAction;
 import hudson.model.Result;
 import hudson.model.Run;
-import hudson.model.listeners.SaveableListener;
-import hudson.model.queue.QueueTaskFuture;
 import hudson.util.FormValidation;
 import hudson.util.RunList;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.github.pullrequest.utils.JobHelper;
-import com.github.kostyasha.github.integration.generic.GitHubRepository;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.slf4j.Logger;
@@ -30,8 +24,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.ghPRCauseFromRun;
+import static org.jenkinsci.plugins.github.pullrequest.utils.JobHelper.rebuild;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
-import static org.jenkinsci.plugins.github.util.JobInfoHelpers.asParameterizedJobMixIn;
 
 /**
  * GitHub Repository local state = last trigger run() state.
@@ -39,17 +33,12 @@ import static org.jenkinsci.plugins.github.util.JobInfoHelpers.asParameterizedJo
  *
  * @author Kanstantsin Shautsou
  */
-public class GitHubPRRepository extends GitHubRepository {
+public class GitHubPRRepository extends GitHubRepository<GitHubPRRepository> {
     /**
      * Store constantly changing information in job directory with .runtime.xml tail
      */
     public static final String FILE = GitHubPRRepository.class.getName() + ".runtime.xml";
     private static final Logger LOGGER = LoggerFactory.getLogger(GitHubPRRepository.class);
-    private transient XmlFile configFile; // for save()
-    private transient Job<?, ?> job;  // for UI
-
-    private final String fullName;
-    private final String githubUrl;
 
     private Map<Integer, GitHubPRPullRequest> pulls;
 
@@ -60,9 +49,8 @@ public class GitHubPRRepository extends GitHubRepository {
      * @param pulls    previous pull request state
      */
     public GitHubPRRepository(String fullName, String githubUrl, Map<Integer, GitHubPRPullRequest> pulls) {
+        super(fullName, githubUrl);
         this.pulls = pulls;
-        this.fullName = fullName;
-        this.githubUrl = githubUrl;
     }
 
     public Map<Integer, GitHubPRPullRequest> getPulls() {
@@ -96,10 +84,6 @@ public class GitHubPRRepository extends GitHubRepository {
         return map;
     }
 
-    public String getFullName() {
-        return fullName;
-    }
-
     @Override
     public String getIconFileName() {
         return Functions.getResourcePath() + "/plugin/github-pullrequest/git-pull-request.svg";
@@ -113,28 +97,6 @@ public class GitHubPRRepository extends GitHubRepository {
     @Override
     public String getUrlName() {
         return "github-pullrequest";
-    }
-
-    public String getGithubUrl() {
-        return githubUrl;
-    }
-
-    @Override
-    public synchronized void save() throws IOException {
-        if (BulkChange.contains(this)) {
-            return;
-        }
-
-        configFile.write(this);
-        SaveableListener.fireOnChange(this, configFile);
-    }
-
-    public void saveQuetly() {
-        try {
-            save();
-        } catch (IOException e) {
-            LOGGER.error("Can't save repository state, because: '{}'", e.getMessage(), e);
-        }
     }
 
     @RequirePOST
@@ -156,7 +118,6 @@ public class GitHubPRRepository extends GitHubRepository {
         }
         return result;
     }
-
 
     /**
      * Run trigger from web.
@@ -243,17 +204,6 @@ public class GitHubPRRepository extends GitHubRepository {
             result = FormValidation.error("Can't start rebuild: " + e.getMessage());
         }
         return result;
-    }
-
-    private static boolean rebuild(Run<?, ?> run) {
-        final QueueTaskFuture queueTaskFuture = asParameterizedJobMixIn(run.getParent())
-                .scheduleBuild2(
-                        0,
-                        run.getAction(ParametersAction.class),
-                        run.getAction(CauseAction.class),
-                        run.getAction(BuildBadgeAction.class)
-                );
-        return queueTaskFuture != null;
     }
 
     public void setJob(Job<?, ?> job) {

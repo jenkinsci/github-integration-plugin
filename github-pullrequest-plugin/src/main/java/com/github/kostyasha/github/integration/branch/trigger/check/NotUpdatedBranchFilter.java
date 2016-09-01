@@ -3,7 +3,7 @@ package com.github.kostyasha.github.integration.branch.trigger.check;
 import com.google.common.base.Predicate;
 import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.github.pullrequest.utils.LoggingTaskListenerWrapper;
-import com.github.kostyasha.github.integration.branch.GitHubLocalBranch;
+import com.github.kostyasha.github.integration.branch.GitHubBranch;
 import com.github.kostyasha.github.integration.branch.GitHubBranchRepository;
 import org.kohsuke.github.GHBranch;
 import org.slf4j.Logger;
@@ -33,7 +33,7 @@ public class NotUpdatedBranchFilter implements Predicate<GHBranch> {
 
     @Override
     public boolean apply(GHBranch remoteBranch) {
-        @CheckForNull GitHubLocalBranch localBranch = localRepo.getBranches().get(remoteBranch.getName());
+        @CheckForNull GitHubBranch localBranch = localRepo.getBranches().get(remoteBranch.getName());
 
         if (!isUpdated(remoteBranch, localBranch)) { // light check
             logger.debug("Branch [#{} {}] not changed", remoteBranch.getName(), remoteBranch.getSHA1());
@@ -45,7 +45,7 @@ public class NotUpdatedBranchFilter implements Predicate<GHBranch> {
     /**
      * lightweight check that comments and time were changed
      */
-    private static boolean isUpdated(GHBranch remoteBranch, GitHubLocalBranch localBranch) {
+    private static boolean isUpdated(GHBranch remoteBranch, GitHubBranch localBranch) {
         if (isNull(localBranch)) {
             return true; // we don't know yet
         }

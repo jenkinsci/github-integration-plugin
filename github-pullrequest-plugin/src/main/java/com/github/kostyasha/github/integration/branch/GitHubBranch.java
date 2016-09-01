@@ -5,15 +5,13 @@ import org.kohsuke.github.GHBranch;
 /**
  * @author Kanstantsin Shautsou
  */
-public class GitHubLocalBranch {
-    private String userLogin;
+public class GitHubBranch {
 
     private String name;
     private String sha1;
-//    private String url;
+    private String htmlUrl;
 
-
-    public GitHubLocalBranch(GHBranch ghBranch) {
+    public GitHubBranch(GHBranch ghBranch) {
         this.name = ghBranch.getName();
         this.sha1 = ghBranch.getSHA1();
     }
@@ -34,7 +32,11 @@ public class GitHubLocalBranch {
         this.sha1 = sha1;
     }
 
-    public String getUserLogin() {
-        return userLogin;
+    public String getHtmlUrl() {
+        return htmlUrl;
+    }
+
+    public void setHtmlUrl(String htmlUrl) {
+        this.htmlUrl = htmlUrl;
     }
 }

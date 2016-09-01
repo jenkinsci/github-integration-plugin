@@ -2,11 +2,11 @@ package org.jenkinsci.plugins.github.pullrequest;
 
 import com.cloudbees.jenkins.GitHubRepositoryName;
 import com.coravy.hudson.plugins.github.GithubProjectProperty;
+import com.github.kostyasha.github.integration.generic.GitHubRepositoryFactory;
 import hudson.Extension;
 import hudson.XmlFile;
 import hudson.model.Action;
 import hudson.model.Job;
-import jenkins.model.TransientActionFactory;
 import org.jenkinsci.plugins.github.util.JobInfoHelpers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,10 +25,9 @@ import static org.jenkinsci.plugins.github.pullrequest.utils.PRHelperFunctions.a
  * @author Kanstantsin Shautsou
  */
 @Extension
-public class GitHubPRRepositoryFactory extends TransientActionFactory<Job> {
+public class GitHubPRRepositoryFactory extends GitHubRepositoryFactory<GitHubPRRepositoryFactory, GitHubPRTrigger> {
     private static final Logger LOGGER = LoggerFactory.getLogger(GitHubPRRepositoryFactory.class);
 
-    @Nonnull
     @Override
     public Collection<? extends Action> createFor(@Nonnull Job job) {
         try {

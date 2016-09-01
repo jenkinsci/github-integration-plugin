@@ -2,7 +2,7 @@ package com.github.kostyasha.github.integration.branch.events.impl;
 
 import com.github.kostyasha.github.integration.branch.GitHubBranchCause;
 import com.github.kostyasha.github.integration.branch.GitHubBranchTrigger;
-import com.github.kostyasha.github.integration.branch.GitHubLocalBranch;
+import com.github.kostyasha.github.integration.branch.GitHubBranch;
 import com.github.kostyasha.github.integration.branch.events.GitHubBranchEvent;
 import com.github.kostyasha.github.integration.branch.events.GitHubBranchEventDescriptor;
 import hudson.Extension;
@@ -32,7 +32,7 @@ public class GitHubBranchCreateEvent extends GitHubBranchEvent {
     @Override
     public GitHubBranchCause check(GitHubBranchTrigger trigger,
                                    GHBranch remoteBranch,
-                                   @CheckForNull GitHubLocalBranch localBranch,
+                                   @CheckForNull GitHubBranch localBranch,
                                    TaskListener listener) throws IOException {
         if (remoteBranch == null) {
             // no remote -> can't be 'created'

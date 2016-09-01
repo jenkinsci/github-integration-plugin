@@ -268,7 +268,7 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
 
             causes = readyToBuildCauses(localRepository, listener, branch);
 
-            localRepository.saveQuetly();
+            localRepository.saveQuietly();
 
             long duration = System.currentTimeMillis() - startTime;
             listener.info(FINISH_MSG + " for {} at {}. Duration: {}ms",

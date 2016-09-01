@@ -244,6 +244,7 @@ public class GHRule implements TestRule {
 
     public void commitFileToBranch(String branch, String fileName, String content, String commitMessage)
             throws IOException, GitAPIException {
+        final String beforeBranch = git.getRepository().getBranch();
         final List<Ref> refList = git.branchList().call();
         boolean exist = false;
         for (Ref ref : refList) {
@@ -261,6 +262,12 @@ public class GHRule implements TestRule {
         writeStringToFile(new File(gitRootDir, fileName), content);
         git.add().addFilepattern(".").call();
         git.commit().setAll(true).setMessage(commitMessage).call();
+        git.push()
+                .setPushAll()
+                .setProgressMonitor(new TextProgressMonitor())
+                .setCredentialsProvider(new UsernamePasswordCredentialsProvider(GH_TOKEN, ""))
+                .call();
+        git.checkout().setName(beforeBranch).call();
     }
 
 

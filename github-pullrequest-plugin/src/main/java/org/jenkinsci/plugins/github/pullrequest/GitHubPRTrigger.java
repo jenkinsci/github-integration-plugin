@@ -296,7 +296,7 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
 
             causes = readyToBuildCauses(localRepository, listener, prNumber);
 
-            localRepository.saveQuetly();
+            localRepository.saveQuietly();
 
             long duration = System.currentTimeMillis() - startTime;
             listener.info(FINISH_MSG + " for {} at {}. Duration: {}ms",

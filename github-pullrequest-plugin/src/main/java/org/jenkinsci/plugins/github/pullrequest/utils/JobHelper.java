@@ -3,14 +3,18 @@ package org.jenkinsci.plugins.github.pullrequest.utils;
 import hudson.matrix.MatrixBuild;
 import hudson.matrix.MatrixConfiguration;
 import hudson.matrix.MatrixRun;
+import hudson.model.BuildBadgeAction;
+import hudson.model.CauseAction;
 import hudson.model.Executor;
 import hudson.model.Cause;
 import hudson.model.Job;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
+import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Result;
 import hudson.model.Run;
+import hudson.model.queue.QueueTaskFuture;
 import hudson.triggers.Trigger;
 import jenkins.model.CauseOfInterruption;
 import jenkins.model.ParameterizedJobMixIn;
@@ -25,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
+import static org.jenkinsci.plugins.github.util.JobInfoHelpers.asParameterizedJobMixIn;
 
 /**
  * @author Kanstantsin Shautsou
@@ -125,4 +130,14 @@ public class JobHelper {
         return defValues;
     }
 
+    public static boolean rebuild(Run<?, ?> run) {
+        final QueueTaskFuture queueTaskFuture = asParameterizedJobMixIn(run.getParent())
+                .scheduleBuild2(
+                        0,
+                        run.getAction(ParametersAction.class),
+                        run.getAction(CauseAction.class),
+                        run.getAction(BuildBadgeAction.class)
+                );
+        return queueTaskFuture != null;
+    }
 }

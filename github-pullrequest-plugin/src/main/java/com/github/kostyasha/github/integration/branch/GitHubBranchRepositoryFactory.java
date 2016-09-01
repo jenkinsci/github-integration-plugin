@@ -2,11 +2,11 @@ package com.github.kostyasha.github.integration.branch;
 
 import com.cloudbees.jenkins.GitHubRepositoryName;
 import com.coravy.hudson.plugins.github.GithubProjectProperty;
+import com.github.kostyasha.github.integration.generic.GitHubRepositoryFactory;
 import hudson.Extension;
 import hudson.XmlFile;
 import hudson.model.Action;
 import hudson.model.Job;
-import jenkins.model.TransientActionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +25,8 @@ import static org.jenkinsci.plugins.github.pullrequest.utils.PRHelperFunctions.a
  * @author Kanstantsin Shautsou
  */
 @Extension
-public class GitHubBranchRepositoryFactory extends TransientActionFactory<Job> {
+public class GitHubBranchRepositoryFactory
+        extends GitHubRepositoryFactory<GitHubBranchRepositoryFactory, GitHubBranchTrigger> {
     private static final Logger LOGGER = LoggerFactory.getLogger(GitHubBranchRepositoryFactory.class);
 
     @Nonnull
@@ -59,11 +60,11 @@ public class GitHubBranchRepositoryFactory extends TransientActionFactory<Job> {
             } catch (IOException e) {
                 LOGGER.info("Can't read saved repository, creating new one", e);
                 localRepository = new GitHubBranchRepository(asFullRepoName(repo), githubUrl,
-                        new HashMap<String, GitHubLocalBranch>());
+                        new HashMap<String, GitHubBranch>());
             }
         } else {
             localRepository = new GitHubBranchRepository(asFullRepoName(repo), githubUrl,
-                    new HashMap<String, GitHubLocalBranch>());
+                    new HashMap<String, GitHubBranch>());
         }
 
         localRepository.setJob(job);
@@ -71,8 +72,4 @@ public class GitHubBranchRepositoryFactory extends TransientActionFactory<Job> {
         return localRepository;
     }
 
-    @Override
-    public Class<Job> type() {
-        return Job.class;
-    }
 }

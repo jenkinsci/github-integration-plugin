@@ -45,7 +45,7 @@ public class GitHubBranchCause extends GitHubCause<GitHubBranchCause> {
         this.branchName = remoteBranch.getName();
         this.headSha = remoteBranch.getSHA1();
         try {
-            withHtmlUrl(new URL(remoteBranch.getOwner().getHtmlUrl().toString() + "/" + branchName));
+            withHtmlUrl(new URL(remoteBranch.getOwner().getHtmlUrl().toString() + "/tree/" + branchName));
         } catch (MalformedURLException ex) {
             LOG.error("Can't make URL for {}", remoteBranch, ex);
         }

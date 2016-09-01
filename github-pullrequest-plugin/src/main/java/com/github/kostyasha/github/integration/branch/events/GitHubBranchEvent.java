@@ -2,7 +2,7 @@ package com.github.kostyasha.github.integration.branch.events;
 
 import com.github.kostyasha.github.integration.branch.GitHubBranchCause;
 import com.github.kostyasha.github.integration.branch.GitHubBranchTrigger;
-import com.github.kostyasha.github.integration.branch.GitHubLocalBranch;
+import com.github.kostyasha.github.integration.branch.GitHubBranch;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.TaskListener;
 import org.kohsuke.github.GHBranch;
@@ -30,7 +30,7 @@ public abstract class GitHubBranchEvent extends AbstractDescribableImpl<GitHubBr
     public GitHubBranchCause check(
             GitHubBranchTrigger gitHubBranchTrigger,
             GHBranch remoteBranch,
-            @CheckForNull GitHubLocalBranch localBranch,
+            @CheckForNull GitHubBranch localBranch,
             TaskListener listener) throws IOException {
         return null;
     }

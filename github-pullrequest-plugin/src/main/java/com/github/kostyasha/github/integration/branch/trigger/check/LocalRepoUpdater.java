@@ -2,7 +2,7 @@ package com.github.kostyasha.github.integration.branch.trigger.check;
 
 import com.github.kostyasha.github.integration.branch.GitHubBranchRepository;
 import com.google.common.base.Function;
-import com.github.kostyasha.github.integration.branch.GitHubLocalBranch;
+import com.github.kostyasha.github.integration.branch.GitHubBranch;
 import org.kohsuke.github.GHBranch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,7 @@ public class LocalRepoUpdater implements Function<GHBranch, GHBranch> {
 
     @Override
     public GHBranch apply(GHBranch remoteBranch) {
-        localRepo.getBranches().put(remoteBranch.getName(), new GitHubLocalBranch(remoteBranch));
+        localRepo.getBranches().put(remoteBranch.getName(), new GitHubBranch(remoteBranch));
 
         return remoteBranch;
     }
