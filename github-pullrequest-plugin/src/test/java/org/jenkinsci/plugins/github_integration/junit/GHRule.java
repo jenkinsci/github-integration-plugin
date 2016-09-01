@@ -57,6 +57,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.Is.is;
 import static org.jenkinsci.plugins.github.config.GitHubServerConfig.loginToGithub;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
+import static org.jenkinsci.plugins.github_integration.awaitility.GHBranchAppeared.ghBranchAppeared;
 import static org.jenkinsci.plugins.github_integration.awaitility.GHRepoAppeared.ghRepoAppeared;
 import static org.jenkinsci.plugins.github_integration.awaitility.GHRepoDeleted.ghRepoDeleted;
 
@@ -268,8 +269,11 @@ public class GHRule implements TestRule {
                 .setCredentialsProvider(new UsernamePasswordCredentialsProvider(GH_TOKEN, ""))
                 .call();
         git.checkout().setName(beforeBranch).call();
-    }
 
+        await().pollInterval(3, SECONDS)
+                .timeout(120, SECONDS)
+                .until(ghBranchAppeared(getGhRepo(), branch));
+    }
 
     public static GitHub waitGH(GitHubServerConfig gitHubServerConfig, long timeout) throws InterruptedException {
         GitHub gitHub;

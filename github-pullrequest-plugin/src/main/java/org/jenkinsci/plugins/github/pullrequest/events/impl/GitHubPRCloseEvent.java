@@ -25,7 +25,7 @@ import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
  */
 public class GitHubPRCloseEvent extends GitHubPREvent {
     private static final String DISPLAY_NAME = "Pull Request Closed";
-    private static final Logger LOGGER = LoggerFactory.getLogger(GitHubPRCloseEvent.class); //NOPMD
+    private static final Logger LOG = LoggerFactory.getLogger(GitHubPRCloseEvent.class); //NOPMD
 
     @DataBoundConstructor
     public GitHubPRCloseEvent() {

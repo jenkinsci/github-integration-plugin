@@ -3,6 +3,7 @@ package com.github.kostyasha.github.integration.generic;
 import antlr.ANTLRException;
 import com.cloudbees.jenkins.GitHubRepositoryName;
 import com.coravy.hudson.plugins.github.GithubProjectProperty;
+import hudson.model.Action;
 import hudson.model.Job;
 import hudson.triggers.Trigger;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTriggerMode;
@@ -11,11 +12,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static org.jenkinsci.plugins.github.pullrequest.GitHubPRTriggerMode.CRON;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
+import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
 
 /**
  * @author Kanstantsin Shautsou
@@ -46,7 +53,38 @@ public abstract class GitHubTrigger<T extends GitHubTrigger<T>> extends Trigger<
         this.triggerMode = triggerMode;
     }
 
+    @Override
+    public void stop() {
+        //TODO clean hooks?
+        if (nonNull(job)) {
+            LOG.info("Stopping '{}' for project '{}'", getDescriptor().getDisplayName(), job.getFullName());
+        }
+        super.stop();
+    }
+
     public abstract String getFinishMsg();
+
+    public abstract GitHubPollingLogAction getPollingLogAction();
+
+    @Nonnull
+    @Override
+    public Collection<? extends Action> getProjectActions() {
+        if (isNull(getPollingLogAction())) {
+            return Collections.emptyList();
+        }
+        return Collections.singleton(getPollingLogAction());
+    }
+
+    public GHRepository getRemoteRepo() throws IOException {
+        if (isNull(remoteRepository)) {
+            Iterator<GHRepository> resolved = getRepoFullName(job).resolve().iterator();
+            checkState(resolved.hasNext(), "Can't get remote GH repo for %s", job.getName());
+
+            remoteRepository = resolved.next();
+        }
+
+        return remoteRepository;
+    }
 
     @CheckForNull
     public Job<?, ?> getJob() {

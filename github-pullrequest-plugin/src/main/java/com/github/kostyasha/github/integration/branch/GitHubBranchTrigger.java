@@ -6,15 +6,12 @@ import com.github.kostyasha.github.integration.branch.events.GitHubBranchEvent;
 import com.github.kostyasha.github.integration.branch.events.GitHubBranchEventDescriptor;
 import com.github.kostyasha.github.integration.branch.trigger.JobRunnerForBranchCause;
 import com.github.kostyasha.github.integration.generic.GitHubTrigger;
+import com.github.kostyasha.github.integration.generic.GitHubTriggerDescriptor;
 import com.google.common.collect.ImmutableSet;
 import hudson.Extension;
-import hudson.model.Action;
 import hudson.model.Item;
 import hudson.model.Job;
 import hudson.triggers.Trigger;
-import hudson.triggers.TriggerDescriptor;
-import hudson.util.SequentialExecutionQueue;
-import jenkins.model.Jenkins;
 import jenkins.model.ParameterizedJobMixIn;
 import jenkins.triggers.SCMTriggerItem;
 import net.sf.json.JSONObject;
@@ -36,15 +33,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -54,7 +48,6 @@ import static com.github.kostyasha.github.integration.branch.trigger.check.Local
 import static com.github.kostyasha.github.integration.branch.trigger.check.NotUpdatedBranchFilter.notUpdated;
 import static com.github.kostyasha.github.integration.branch.trigger.check.SkipFirstRunForBranchFilter.ifSkippedFirstRun;
 import static com.google.common.base.Charsets.UTF_8;
-import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Predicates.and;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.base.Predicates.notNull;
@@ -71,7 +64,7 @@ import static org.jenkinsci.plugins.github.util.JobInfoHelpers.isBuildable;
  * @author Kanstantsin Shautsou
  */
 public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GitHubBranchTrigger.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GitHubBranchTrigger.class);
     public static final String FINISH_MSG = "Finished GitHub Branch trigger check";
 
     private List<GitHubBranchEvent> events = new ArrayList<>();
@@ -166,7 +159,7 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
 
     @Override
     public void start(Job<?, ?> project, boolean newInstance) {
-        LOGGER.info("Starting GitHub Branch trigger for project {}", project.getName());
+        LOG.info("Starting GitHub Branch trigger for project {}", project.getName());
         super.start(project, newInstance);
 
         if (newInstance && GitHubPlugin.configuration().isManageHooks() && withHookTriggerMode().apply(project)) {
@@ -180,15 +173,6 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
         }
     }
 
-    @Override
-    public void stop() {
-        //TODO clean hooks?
-        if (nonNull(job)) {
-            LOGGER.info("Stopping the Branch trigger for project {}", job.getFullName());
-        }
-        super.stop();
-    }
-
     @CheckForNull
     public GitHubBranchPollingLogAction getPollingLogAction() {
         if (isNull(pollingLogAction) && nonNull(job)) {
@@ -196,15 +180,6 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
         }
 
         return pollingLogAction;
-    }
-
-    @Nonnull
-    @Override
-    public Collection<? extends Action> getProjectActions() {
-        if (isNull(getPollingLogAction())) {
-            return Collections.emptyList();
-        }
-        return Collections.singleton(getPollingLogAction());
     }
 
     @Override
@@ -217,23 +192,12 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
      */
     public void queueRun(Job<?, ?> job, final String branch) {
         this.job = job;
-        getDescriptor().queue.execute(new Runnable() {
+        getDescriptor().getQueue().execute(new Runnable() {
             @Override
             public void run() {
                 doRun(branch);
             }
         });
-    }
-
-    public GHRepository getRemoteRepo() throws IOException {
-        if (isNull(remoteRepository)) {
-            Iterator<GHRepository> resolved = getRepoFullName(job).resolve().iterator();
-            checkState(resolved.hasNext(), "Can't get remote GH repo for %s", job.getName());
-
-            remoteRepository = resolved.next();
-        }
-
-        return remoteRepository;
     }
 
     /**
@@ -243,18 +207,18 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
      */
     public void doRun(String branch) {
         if (not(isBuildable()).apply(job)) {
-            LOGGER.debug("Job {} is disabled, but trigger run!", isNull(job) ? "<no job>" : job.getFullName());
+            LOG.debug("Job {} is disabled, but trigger run!", isNull(job) ? "<no job>" : job.getFullName());
             return;
         }
 
         if (!isSupportedTriggerMode(getTriggerMode())) {
-            LOGGER.warn("Trigger mode {} is not supported yet ({})", getTriggerMode(), job.getFullName());
+            LOG.warn("Trigger mode {} is not supported yet ({})", getTriggerMode(), job.getFullName());
             return;
         }
 
         GitHubBranchRepository localRepository = job.getAction(GitHubBranchRepository.class);
         if (isNull(localRepository)) {
-            LOGGER.warn("Can't get repository info, maybe project {} misconfigured?", job.getFullName());
+            LOG.warn("Can't get repository info, maybe project {} misconfigured?", job.getFullName());
             return;
         }
 
@@ -274,7 +238,7 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
             listener.info(FINISH_MSG + " for {} at {}. Duration: {}ms",
                     localRepository.getFullName(), getDateTimeInstance().format(new Date()), duration);
         } catch (Exception e) {
-            LOGGER.error("Can't process check ({})", e.getMessage(), e);
+            LOG.error("Can't process check ({})", e.getMessage(), e);
             return;
         }
 
@@ -311,14 +275,14 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
                     .filter(notNull())
                     .toList();
 
-            LOGGER.trace("Causes count for {}: {}", localRepository.getFullName(), causes.size());
-            final ImmutableSet<GHBranch> ghBranches = from(prepared).transform(updateLocalRepo(localRepository)).toSet();
+            LOG.trace("Causes count for {}: {}", localRepository.getFullName(), causes.size());
+            from(prepared).transform(updateLocalRepo(localRepository)).toSet();
 
             saveIfSkipFirstRun();
 
             GHRateLimit rateLimitAfter = github.getRateLimit();
             int consumed = rateLimitBefore.remaining - rateLimitAfter.remaining;
-            LOGGER.info("GitHub rate limit after check {}: {}, consumed: {}, checked PRs: {}",
+            LOG.info("GitHub rate limit after check {}: {}, consumed: {}, checked PRs: {}",
                     localRepository.getFullName(), rateLimitAfter, consumed, remoteBranches.size());
 
             return causes;
@@ -328,10 +292,19 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
         }
     }
 
+    /**
+     * Remote branch for future analysing. null - all remote branches.
+     */
     private Set<GHBranch> branchesToCheck(String branch, GHRepository remoteRepo, GitHubBranchRepository localRepository)
             throws IOException {
         final LinkedHashSet<GHBranch> ghBranches = new LinkedHashSet<>();
-        ghBranches.addAll(remoteRepo.getBranches().values());
+
+        if (branch != null) {
+            ghBranches.add(remoteRepo.getBranches().get(branch));
+        } else {
+            ghBranches.addAll(remoteRepo.getBranches().values());
+        }
+
         return ghBranches;
     }
 
@@ -340,20 +313,10 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
     }
 
     @Extension
-    public static class DescriptorImpl extends TriggerDescriptor {
-        private transient SequentialExecutionQueue queue =
-                new SequentialExecutionQueue(Jenkins.MasterComputer.threadPoolForRemoting);
+    public static class DescriptorImpl extends GitHubTriggerDescriptor {
 
         public DescriptorImpl() {
             load();
-        }
-
-        @Nonnull
-        public SequentialExecutionQueue getQueue() {
-            if (queue == null) {
-                queue = new SequentialExecutionQueue(Jenkins.MasterComputer.threadPoolForRemoting);
-            }
-            return queue;
         }
 
         @Override

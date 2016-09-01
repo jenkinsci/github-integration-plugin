@@ -50,14 +50,14 @@ l.layout(title: "GitHub Branch Statuses") {
                     }
                 }
                 tr() {
-                    td() { makeBuildItem(buildMap.get(branch.branchName)) }
+                    td() { makeBuildItem(buildMap.get(branch.name)) }
                 }
                 if (h.hasPermission(Item.BUILD)) {
                     tr() {
                         td() {
-                            def rebuildId = "rebuildResult" + branch.branchName;
+                            def rebuildId = "rebuildResult" + branch.name;
                             form(method: "post", action: "rebuild",
-                                    onsubmit: "callFeature(this, ${rebuildId}, {'branch' : ${branch.branchName} })") {
+                                    onsubmit: "callFeature(this, ${rebuildId}, {'branch' : ${branch.name} })") {
                                 f.submit(value: _("Rebuild"))
                                 div(id: rebuildId)
                             }

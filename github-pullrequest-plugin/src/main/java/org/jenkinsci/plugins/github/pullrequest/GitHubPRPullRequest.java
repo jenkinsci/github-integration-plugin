@@ -177,7 +177,7 @@ public class GitHubPRPullRequest {
         }
     }
 
-    public String getIconFileName() {
+    public static String getIconFileName() {
         return Functions.getResourcePath() + "/plugin/github-pullrequest/git-pull-request.svg";
     }
 

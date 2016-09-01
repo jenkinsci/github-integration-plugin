@@ -25,8 +25,16 @@ import static org.jenkinsci.plugins.github.util.FluentIterableWrapper.from;
  * @author Kanstantsin Shautsou
  */
 public abstract class GitHubTriggerDescriptor extends TriggerDescriptor {
-    public final transient SequentialExecutionQueue queue =
+    private transient SequentialExecutionQueue queue =
             new SequentialExecutionQueue(Jenkins.MasterComputer.threadPoolForRemoting);
+
+    @Nonnull
+    public SequentialExecutionQueue getQueue() {
+        if (queue == null) {
+            queue = new SequentialExecutionQueue(Jenkins.MasterComputer.threadPoolForRemoting);
+        }
+        return queue;
+    }
 
     protected String publishedURL;
 

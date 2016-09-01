@@ -208,14 +208,6 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
         }
     }
 
-    @Override
-    public void stop() {
-        //TODO clean hooks?
-        if (nonNull(job)) {
-            LOGGER.info("Stopping the GitHub PR trigger for project {}", job.getFullName());
-        }
-        super.stop();
-    }
 
     @CheckForNull
     public GitHubPRPollingLogAction getPollingLogAction() {
@@ -224,15 +216,6 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
         }
 
         return pollingLogAction;
-    }
-
-    @Nonnull
-    @Override
-    public Collection<? extends Action> getProjectActions() {
-        if (isNull(getPollingLogAction())) {
-            return Collections.emptyList();
-        }
-        return Collections.singleton(getPollingLogAction());
     }
 
     @Override
@@ -245,23 +228,12 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
      */
     public void queueRun(Job<?, ?> job, final int prNumber) {
         this.job = job;
-        getDescriptor().queue.execute(new Runnable() {
+        getDescriptor().getQueue().execute(new Runnable() {
             @Override
             public void run() {
                 doRun(prNumber);
             }
         });
-    }
-
-    public GHRepository getRemoteRepo() throws IOException {
-        if (isNull(remoteRepository)) {
-            Iterator<GHRepository> resolved = getRepoFullName(job).resolve().iterator();
-            checkState(resolved.hasNext(), "Can't get remote GH repo for %s", job.getName());
-
-            remoteRepository = resolved.next();
-        }
-
-        return remoteRepository;
     }
 
     /**
@@ -345,7 +317,8 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
                             withUserRestriction(listener, userRestriction)
                     ))
                     .transform(toGitHubPRCause(localRepository, listener, this))
-                    .filter(notNull()).toList();
+                    .filter(notNull())
+                    .toList();
 
             LOGGER.trace("Causes count for {}: {}", localRepository.getFullName(), causes.size());
             from(prepeared).transform(updateLocalRepo(localRepository)).toSet();

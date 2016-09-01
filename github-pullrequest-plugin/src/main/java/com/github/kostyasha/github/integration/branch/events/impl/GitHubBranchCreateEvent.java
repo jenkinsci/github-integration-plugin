@@ -35,15 +35,16 @@ public class GitHubBranchCreateEvent extends GitHubBranchEvent {
                                    @CheckForNull GitHubBranch localBranch,
                                    TaskListener listener) throws IOException {
         if (remoteBranch == null) {
-            // no remote -> can't be 'created'
+            LOG.debug("Remote branch is null for localBranch '{}'. Branch can't be 'created'", localBranch.getName());
             return null;
         }
 
         GitHubBranchCause cause = null;
-        String causeMessage = "Branch created";
         if (isNull(localBranch)) { // didn't exist before
+            String causeMessage = "Branch created";
             final PrintStream logger = listener.getLogger();
             logger.println(DISPLAY_NAME + ": state has changed (branch was created)");
+            LOG.debug("{}: state has changed (branch was created)", DISPLAY_NAME);
             cause = new GitHubBranchCause(remoteBranch, causeMessage, false);
         }
 

@@ -2,14 +2,14 @@ package com.github.kostyasha.github.integration.branch.GitHubBranch
 
 import com.google.common.base.Joiner
 
-a(href: my.branchName) {
+a(href: my.htmlUrl) {
     img(src: rootURL + my.iconFileName, width: "16", height: "16")
-    text(" #" + my.branchName + ": " + my.branchName)
+    text(my.name + ": " + my.name)
 }
-
+//
 table(width: "1000px") {
     tr() {
-        td("Branch: " + my.branchName)
+        td("SHA: " + my.sha)
     }
 //    tr() {
 //        td("Head SHA: " + my.headSha)

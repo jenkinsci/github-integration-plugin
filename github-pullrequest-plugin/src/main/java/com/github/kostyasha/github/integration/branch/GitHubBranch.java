@@ -1,5 +1,6 @@
 package com.github.kostyasha.github.integration.branch;
 
+import hudson.Functions;
 import org.kohsuke.github.GHBranch;
 
 /**
@@ -38,5 +39,9 @@ public class GitHubBranch {
 
     public void setHtmlUrl(String htmlUrl) {
         this.htmlUrl = htmlUrl;
+    }
+
+    public static String getIconFileName() {
+        return Functions.getResourcePath() + "/plugin/github-pullrequest/git-branch.svg";
     }
 }

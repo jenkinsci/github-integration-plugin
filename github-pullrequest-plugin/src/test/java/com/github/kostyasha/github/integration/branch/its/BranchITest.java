@@ -77,8 +77,9 @@ public class BranchITest {
         assertThat("Action storage should be available", ghRepository, notNullValue());
 
         branches = ghRepository.getBranches();
-        jRule.pause();
-        assertThat("Pull request 1 should appear in action storage", branches.entrySet(), Matchers.hasSize(4));
+        assertThat(branches.entrySet(), Matchers.hasSize(4));
+
+        assertThat(job.getBuilds().size(), is(4));
 
         jRule.assertBuildStatusSuccess(job.getLastBuild());
     }
