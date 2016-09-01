@@ -36,7 +36,7 @@ public abstract class GitHubTriggerDescriptor extends TriggerDescriptor {
         return queue;
     }
 
-    protected String publishedURL;
+    private String publishedURL;
 
     public String getPublishedURL() {
         return publishedURL;

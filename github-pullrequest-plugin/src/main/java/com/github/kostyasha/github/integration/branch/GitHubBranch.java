@@ -13,8 +13,9 @@ public class GitHubBranch {
     private String htmlUrl;
 
     public GitHubBranch(GHBranch ghBranch) {
-        this.name = ghBranch.getName();
-        this.sha1 = ghBranch.getSHA1();
+        name = ghBranch.getName();
+        sha1 = ghBranch.getSHA1();
+        htmlUrl = ghBranch.getOwner().getHtmlUrl().toString() + "/tree/" + name;
     }
 
     public String getName() {

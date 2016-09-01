@@ -1,13 +1,9 @@
 package com.github.kostyasha.github.integration.generic;
 
-import hudson.XmlFile;
 import hudson.model.Job;
-import hudson.util.FormValidation;
 import jenkins.model.TransientActionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 /**
  * @author Kanstantsin Shautsou

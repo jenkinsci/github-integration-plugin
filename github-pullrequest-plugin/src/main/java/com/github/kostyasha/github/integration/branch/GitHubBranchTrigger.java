@@ -7,7 +7,6 @@ import com.github.kostyasha.github.integration.branch.events.GitHubBranchEventDe
 import com.github.kostyasha.github.integration.branch.trigger.JobRunnerForBranchCause;
 import com.github.kostyasha.github.integration.generic.GitHubTrigger;
 import com.github.kostyasha.github.integration.generic.GitHubTriggerDescriptor;
-import com.google.common.collect.ImmutableSet;
 import hudson.Extension;
 import hudson.model.Item;
 import hudson.model.Job;

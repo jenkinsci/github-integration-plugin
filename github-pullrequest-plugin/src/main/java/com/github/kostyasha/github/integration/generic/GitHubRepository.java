@@ -1,25 +1,17 @@
 package com.github.kostyasha.github.integration.generic;
 
-import com.cloudbees.jenkins.GitHubWebHook;
 import hudson.BulkChange;
 import hudson.XmlFile;
 import hudson.model.Action;
-import hudson.model.Item;
 import hudson.model.Job;
-import hudson.model.Result;
-import hudson.model.Run;
 import hudson.model.Saveable;
 import hudson.model.listeners.SaveableListener;
 import hudson.util.FormValidation;
-import jenkins.model.Jenkins;
 import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author Kanstantsin Shautsou
