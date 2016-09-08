@@ -38,12 +38,12 @@ public abstract class GitHubTrigger<T extends GitHubTrigger<T>> extends Trigger<
      * Cancel queued runs for specific kind (i.e. PR by number, branch by name).
      */
     protected boolean cancelQueued = false;
-    protected boolean abortRunning = false;
+    private boolean abortRunning = false;
     protected boolean skipFirstRun = false;
 
     // for performance
-    protected transient GitHubRepositoryName repoName;
-    protected transient GHRepository remoteRepository;
+    private transient GitHubRepositoryName repoName;
+    private transient GHRepository remoteRepository;
 
     protected GitHubTrigger(String cronTabSpec) throws ANTLRException {
         super(cronTabSpec);
