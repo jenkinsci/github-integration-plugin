@@ -6,6 +6,7 @@ import org.kohsuke.github.GHBranch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -20,6 +21,11 @@ public class GitHubBranchCause extends GitHubCause<GitHubBranchCause> {
     private static final Logger LOG = LoggerFactory.getLogger(GitHubBranchCause.class);
 
     private final String branchName;
+
+    /**
+     * May not exist for deleted branch.
+     */
+    @CheckForNull
     private final String headSha;
 
     public GitHubBranchCause(GHBranch remoteBranch) {
@@ -32,7 +38,7 @@ public class GitHubBranchCause extends GitHubCause<GitHubBranchCause> {
         }
     }
 
-    public GitHubBranchCause(String reason, String branch, String headSha, boolean skip) {
+    public GitHubBranchCause(String branch, String headSha, String reason, boolean skip) {
         withReason(reason);
         this.branchName = branch;
         this.headSha = headSha;
@@ -51,9 +57,14 @@ public class GitHubBranchCause extends GitHubCause<GitHubBranchCause> {
         }
     }
 
+    @Nonnull
     @Override
     public String getShortDescription() {
-        return "GitHub Branch #<a href=\"" + getHtmlUrl() + "\">" + branchName + "</a>, " + getReason();
+        if (getHtmlUrl() != null) {
+            return "GitHub Branch #<a href=\"" + getHtmlUrl() + "\">" + branchName + "</a>, " + getReason();
+        } else {
+            return "Deleted branch";
+        }
     }
 
     @Override
@@ -73,6 +84,7 @@ public class GitHubBranchCause extends GitHubCause<GitHubBranchCause> {
         return branchName;
     }
 
+    @CheckForNull
     public String getHeadSha() {
         return headSha;
     }

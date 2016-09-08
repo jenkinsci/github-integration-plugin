@@ -7,8 +7,7 @@ import com.coravy.hudson.plugins.github.GithubProjectProperty;
 import com.github.kostyasha.github.integration.branch.GitHubBranchPollingLogAction;
 import com.github.kostyasha.github.integration.branch.GitHubBranchTrigger;
 import com.github.kostyasha.github.integration.branch.events.GitHubBranchEvent;
-import com.github.kostyasha.github.integration.branch.events.impl.GitHubBranchCreateEvent;
-import com.github.kostyasha.github.integration.generic.GitHubTrigger;
+import com.github.kostyasha.github.integration.branch.events.impl.GitHubBranchCreatedEvent;
 import hudson.model.Job;
 import hudson.util.Secret;
 import org.eclipse.jgit.api.Git;
@@ -230,7 +229,7 @@ public class GHRule implements TestRule {
 
     public static GitHubBranchTrigger getDefaultBranchTrigger() throws ANTLRException {
         final ArrayList<GitHubBranchEvent> githubEvents = new ArrayList<>();
-        githubEvents.add(new GitHubBranchCreateEvent());
+        githubEvents.add(new GitHubBranchCreatedEvent());
 
         final GitHubBranchTrigger githubTrigger = new GitHubBranchTrigger("", GitHubPRTriggerMode.CRON, githubEvents);
         githubTrigger.setPreStatus(true);

@@ -22,7 +22,13 @@ public abstract class GitHubCause<T extends GitHubCause<T>> extends Cause {
 
     private boolean skip;
     private String reason;
+
+    /**
+     * Doesn't exist for deleted branch.
+     */
+    @CheckForNull
     private URL htmlUrl;
+
     @CheckForNull
     protected String title;
 
@@ -41,6 +47,7 @@ public abstract class GitHubCause<T extends GitHubCause<T>> extends Cause {
     }
 
     // for printing branch url on left builds panel (build description)
+    @CheckForNull
     public URL getHtmlUrl() {
         return htmlUrl;
     }
