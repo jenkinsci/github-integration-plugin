@@ -103,7 +103,7 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
         this.preStatus = preStatus;
     }
 
-   @DataBoundSetter
+    @DataBoundSetter
     public void setUserRestriction(GitHubPRUserRestriction userRestriction) {
         this.userRestriction = userRestriction;
     }

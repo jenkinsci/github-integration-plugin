@@ -30,9 +30,9 @@ public abstract class GitHubCause<T extends GitHubCause<T>> extends Cause {
     private URL htmlUrl;
 
     @CheckForNull
-    protected String title;
+    private String title;
 
-    protected String pollingLog;
+    private String pollingLog;
 
     public boolean isSkip() {
         return skip;
@@ -60,9 +60,10 @@ public abstract class GitHubCause<T extends GitHubCause<T>> extends Cause {
         return this;
     }
 
-    /**
-     * @see #pollingLog
-     */
+    public String getPollingLog() {
+        return pollingLog;
+    }
+
     public GitHubCause<T> withPollingLog(String pollingLog) {
         this.pollingLog = pollingLog;
         return this;
@@ -72,7 +73,7 @@ public abstract class GitHubCause<T extends GitHubCause<T>> extends Cause {
         this.pollingLog = pollingLog;
     }
 
-    public void setPollingLog(File logFile) throws IOException {
+    public void setPollingLogFile(File logFile) throws IOException {
         this.pollingLog = readFileToString(logFile);
     }
 

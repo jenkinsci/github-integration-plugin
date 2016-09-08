@@ -72,12 +72,12 @@ public class GitHubBranchCause extends GitHubCause<GitHubBranchCause> {
         // move polling log from cause to action
         try {
             GitHubBranchPollingLogAction action = new GitHubBranchPollingLogAction(run);
-            writeStringToFile(action.getPollingLogFile(), pollingLog);
+            writeStringToFile(action.getPollingLogFile(), getPollingLog());
             run.replaceAction(action);
         } catch (IOException ex) {
             LOG.warn("Failed to persist the polling log", ex);
         }
-        pollingLog = null;
+        setPollingLog(null);
     }
 
     public String getBranchName() {

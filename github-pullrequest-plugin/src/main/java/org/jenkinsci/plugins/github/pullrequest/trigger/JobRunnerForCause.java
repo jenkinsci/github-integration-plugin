@@ -83,7 +83,7 @@ public class JobRunnerForCause implements Predicate<GitHubPRCause> {
         SecurityContext old = ACL.impersonate(ACL.SYSTEM);
 
         try {
-            cause.setPollingLog(trigger.getPollingLogAction().getPollingLogFile());
+            cause.setPollingLogFile(trigger.getPollingLogAction().getPollingLogFile());
 
             StringBuilder sb = new StringBuilder();
             sb.append("Jenkins queued the run (").append(cause.getReason()).append(")");
