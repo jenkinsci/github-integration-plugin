@@ -39,8 +39,16 @@ public abstract class GitHubRepository<T extends GitHubRepository> implements Ac
         return githubUrl;
     }
 
+    public Job<?, ?> getJob() {
+        return job;
+    }
+
     public void setJob(Job<?, ?> job) {
         this.job = job;
+    }
+
+    public XmlFile getConfigFile() {
+        return configFile;
     }
 
     public void setConfigFile(XmlFile configFile) {

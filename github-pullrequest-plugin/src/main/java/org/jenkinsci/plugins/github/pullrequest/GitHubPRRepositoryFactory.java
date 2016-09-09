@@ -7,6 +7,7 @@ import hudson.Extension;
 import hudson.XmlFile;
 import hudson.model.Action;
 import hudson.model.Job;
+import org.jenkinsci.plugins.github.pullrequest.utils.JobHelper;
 import org.jenkinsci.plugins.github.util.JobInfoHelpers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,12 +32,11 @@ public class GitHubPRRepositoryFactory extends GitHubRepositoryFactory<GitHubPRR
     @Override
     public Collection<? extends Action> createFor(@Nonnull Job job) {
         try {
-            if (nonNull(JobInfoHelpers.triggerFrom(job, GitHubPRTrigger.class))) {
+            if (nonNull(JobHelper.triggerFrom(job, GitHubPRTrigger.class))) {
                 return Collections.singleton(forProject(job));
             }
         } catch (Exception ex) {
             LOGGER.warn("Bad configured project {} - {}", job.getFullName(), ex.getMessage());
-            return Collections.emptyList();
         }
 
         return Collections.emptyList();

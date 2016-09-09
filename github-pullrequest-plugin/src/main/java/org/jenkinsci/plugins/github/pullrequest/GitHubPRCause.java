@@ -162,14 +162,6 @@ public class GitHubPRCause extends GitHubCause<GitHubPRCause> {
     }
 
     /**
-     * @see #title
-     */
-    public GitHubPRCause withTitle(String title) {
-        this.title = title;
-        return this;
-    }
-
-    /**
      * @see #sourceRepoOwner
      */
     public GitHubPRCause withSourceRepoOwner(String sourceRepoOwner) {
@@ -297,12 +289,12 @@ public class GitHubPRCause extends GitHubCause<GitHubPRCause> {
         // move polling log from cause to action
         try {
             GitHubPRPollingLogAction action = new GitHubPRPollingLogAction(run);
-            FileUtils.writeStringToFile(action.getPollingLogFile(), pollingLog);
+            FileUtils.writeStringToFile(action.getPollingLogFile(), getPollingLog());
             run.replaceAction(action);
         } catch (IOException e) {
             LOGGER.warn("Failed to persist the polling log", e);
         }
-        pollingLog = null;
+        setPollingLog(null);
     }
 
     @Override

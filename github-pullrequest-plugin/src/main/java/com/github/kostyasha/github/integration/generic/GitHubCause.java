@@ -1,6 +1,7 @@
 package com.github.kostyasha.github.integration.generic;
 
 import hudson.model.Cause;
+import org.jenkinsci.plugins.github.pullrequest.GitHubPRCause;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,6 +96,11 @@ public abstract class GitHubCause<T extends GitHubCause<T>> extends Cause {
     @Nonnull
     public String getTitle() {
         return nonNull(title) ? title : "";
+    }
+
+    public GitHubCause<T> withTitle(String title) {
+        this.title = title;
+        return this;
     }
 
     /**

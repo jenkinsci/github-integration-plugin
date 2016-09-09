@@ -38,7 +38,6 @@ public class GitHubBranchRepositoryFactory
             }
         } catch (Exception ex) {
             LOGGER.warn("Bad configured project {} - {}", job.getFullName(), ex.getMessage());
-            return Collections.emptyList();
         }
 
         return Collections.emptyList();
