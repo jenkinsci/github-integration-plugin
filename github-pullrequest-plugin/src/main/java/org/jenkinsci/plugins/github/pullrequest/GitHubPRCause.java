@@ -80,7 +80,7 @@ public class GitHubPRCause extends GitHubCause<GitHubPRCause> {
         this.targetBranch = targetBranch;
         this.sourceBranch = sourceBranch;
         this.prAuthorEmail = prAuthorEmail;
-        this.title = title;
+        withTitle(title);
         withHtmlUrl(htmlUrl);
         this.sourceRepoOwner = sourceRepoOwner;
         this.labels = labels;
