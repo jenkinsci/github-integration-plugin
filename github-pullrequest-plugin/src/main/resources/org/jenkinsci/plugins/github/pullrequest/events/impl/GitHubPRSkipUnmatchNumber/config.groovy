@@ -1,4 +1,4 @@
-package org.jenkinsci.plugins.github.pullrequest.events.impl.GitHubPRSkipMatchNumber
+package org.jenkinsci.plugins.github.pullrequest.events.impl.GitHubPRSkipUnatchNumber
 
 import lib.FormTagLib;
 

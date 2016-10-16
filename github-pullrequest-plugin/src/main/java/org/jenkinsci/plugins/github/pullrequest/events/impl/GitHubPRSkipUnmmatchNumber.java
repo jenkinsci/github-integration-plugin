@@ -14,17 +14,17 @@ import javax.annotation.CheckForNull;
 import java.io.IOException;
 
 /**
- * Skip PR checks when matched to PR number.
+ * Skip PR checks when un-matched to PR number.
  *
  * @author Kanstantsin Shautsou
  */
-public class GitHubPRSkipMatchNumber extends GitHubPREvent {
+public class GitHubPRSkipUnmatchNumber extends GitHubPREvent {
     private static final String DISPLAY_NAME = "PR Number";
 
     private Integer number;
 
     @DataBoundConstructor
-    public GitHubPRSkipMatchNumber(Integer number) {
+    public GitHubPRSkipUnmatchNumber(Integer number) {
         this.number = number;
     }
 
@@ -42,11 +42,11 @@ public class GitHubPRSkipMatchNumber extends GitHubPREvent {
         }
 
         if (remotePR != null && remotePR.getNumber() == getNumber()) {
-            return new GitHubPRCause(remotePR, "Skipping matched pr " + remotePR.getNumber(), true);
+            return new GitHubPRCause(remotePR, "Building matched pr " + remotePR.getNumber(), false);
         }
 
         if (localPR != null && localPR.getNumber() == getNumber()) {
-            return new GitHubPRCause(remotePR, "Skipping matched pr " + localPR.getNumber(), true);
+            return new GitHubPRCause(remotePR, "Building matched pr " + localPR.getNumber(), false);
         }
 
         return null;
