@@ -53,6 +53,14 @@ public class GitHubBranchRepository extends GitHubRepository<GitHubBranchReposit
         return branches;
     }
 
+    public void addBranch(GitHubBranch branch) {
+        branches.put(branch.getName(), branch);
+    }
+
+    public GitHubBranch getBranch(String name) {
+        return branches.get(name);
+    }
+
     @Override
     public String getIconFileName() {
         return Functions.getResourcePath() + "/plugin/github-pullrequest/git-branch.svg";

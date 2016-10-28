@@ -3,7 +3,6 @@ package com.github.kostyasha.github.integration.branch.events.impl;
 import com.github.kostyasha.github.integration.branch.GitHubBranch;
 import com.github.kostyasha.github.integration.branch.GitHubBranchCause;
 import com.github.kostyasha.github.integration.branch.GitHubBranchRepository;
-import com.github.kostyasha.github.integration.branch.GitHubBranchTrigger;
 import com.github.kostyasha.github.integration.branch.events.GitHubBranchEvent;
 import com.github.kostyasha.github.integration.branch.events.GitHubBranchEventDescriptor;
 import hudson.Extension;
@@ -33,8 +32,7 @@ public class GitHubBranchCreatedEvent extends GitHubBranchEvent {
     }
 
     @Override
-    public GitHubBranchCause check(GitHubBranchTrigger trigger,
-                                   GHBranch remoteBranch,
+    public GitHubBranchCause check(GHBranch remoteBranch,
                                    @CheckForNull GitHubBranch localBranch,
                                    GitHubBranchRepository locaRepo,
                                    TaskListener listener) throws IOException {

@@ -1,9 +1,11 @@
 package com.github.kostyasha.github.integration.branch;
 
 import antlr.ANTLRException;
+
 import com.cloudbees.jenkins.GitHubWebHook;
 import com.github.kostyasha.github.integration.branch.events.GitHubBranchEvent;
 import com.github.kostyasha.github.integration.branch.events.GitHubBranchEventDescriptor;
+import com.github.kostyasha.github.integration.branch.trigger.GitHubBranchFilterChain;
 import com.github.kostyasha.github.integration.branch.trigger.JobRunnerForBranchCause;
 import com.github.kostyasha.github.integration.generic.GitHubTrigger;
 import com.github.kostyasha.github.integration.generic.GitHubTriggerDescriptor;
@@ -41,18 +43,18 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import static com.github.kostyasha.github.integration.branch.trigger.check.BranchToCauseConverter.toGitHubBranchCause;
-import static com.github.kostyasha.github.integration.branch.trigger.check.LocalRepoUpdater.updateLocalRepo;
-import static com.github.kostyasha.github.integration.branch.trigger.check.SkipFirstRunForBranchFilter.ifSkippedFirstRun;
+import static com.github.kostyasha.github.integration.branch.trigger.BranchRepositoryUpdater.branchRepoUpdater;
+import static com.github.kostyasha.github.integration.branch.trigger.RemoteBranchToTriggerCause.toTriggerCause;
+import static com.github.kostyasha.github.integration.branch.trigger.SkipFirstRunForBranchFilter.skipFirstBuildFilter;
 import static com.github.kostyasha.github.integration.branch.webhook.WebhookInfoBranchPredicates.withHookTriggerMode;
+import static com.github.kostyasha.github.integration.generic.GitHubTriggerDescriptor.githubFor;
 import static com.google.common.base.Charsets.UTF_8;
-import static com.google.common.base.Predicates.and;
 import static com.google.common.base.Predicates.not;
-import static com.google.common.base.Predicates.notNull;
 import static java.text.DateFormat.getDateTimeInstance;
-import static org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger.DescriptorImpl.githubFor;
 import static org.jenkinsci.plugins.github.pullrequest.GitHubPRTriggerMode.LIGHT_HOOKS;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.nonNull;
@@ -144,12 +146,14 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
         }
     }
 
+    @Override
     public void run() {
         if (getTriggerMode() != LIGHT_HOOKS) {
             doRun(null);
         }
     }
 
+    @Override
     @CheckForNull
     public GitHubBranchPollingLogAction getPollingLogAction() {
         if (isNull(pollingLogAction) && nonNull(job)) {
@@ -201,8 +205,8 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
 
         List<GitHubBranchCause> causes;
 
-        try (LoggingTaskListenerWrapper listener =
-                     new LoggingTaskListenerWrapper(getPollingLogAction().getPollingLogFile(), UTF_8)) {
+        try (LoggingTaskListenerWrapper listener = new LoggingTaskListenerWrapper(
+                getPollingLogAction().getPollingLogFile(), UTF_8)) {
             long startTime = System.currentTimeMillis();
             listener.debug("Running GitHub Branch trigger check for {} on {}",
                     getDateTimeInstance().format(new Date(startTime)), localRepository.getFullName());
@@ -222,12 +226,17 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
         from(causes).filter(new JobRunnerForBranchCause(job, this)).toSet();
     }
 
+    private GitHubBranchFilterChain createFilterChain(GitHubBranchRepository localRepository,
+            LoggingTaskListenerWrapper logger) {
+        return GitHubBranchFilterChain.filterChain()
+                .with(skipFirstBuildFilter(skipFirstRun, localRepository, logger));
+    }
+
     /**
      * @return list of causes for scheduling branch builds.
      */
     private List<GitHubBranchCause> readyToBuildCauses(GitHubBranchRepository localRepository,
-                                                       LoggingTaskListenerWrapper listener,
-                                                       @Nullable String branch) {
+            LoggingTaskListenerWrapper listener, @Nullable String branch) {
         try {
             GitHub github = githubFor(localRepository.getGithubUrl().toURI());
             GHRateLimit rateLimitBefore = github.getRateLimit();
@@ -237,23 +246,13 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
             GHRepository remoteRepo = getRemoteRepository();
             Set<GHBranch> remoteBranches = branchesToCheck(branch, remoteRepo, localRepository);
 
-            Set<GHBranch> prepared = from(remoteBranches)
-//                    .transform(prepareUserRestrictionFilter(localRepository, this))
-                    .toSet();
+            List<GitHubBranchCause> causes = mapToTriggerCauses(remoteBranches, localRepository, listener);
 
-            List<GitHubBranchCause> causes = from(prepared)
-                    .filter(and(
-                            ifSkippedFirstRun(listener, skipFirstRun)//,
-//                            withBranchRestriction(listener, branchRestriction),
-//                            withUserRestriction(listener, userRestriction)
-                    ))
-                    .transform(toGitHubBranchCause(localRepository, listener, this))
-                    .filter(notNull())
-                    .toList();
-
-            LOG.trace("Causes count for {}: {}", localRepository.getFullName(), causes.size());
-            from(prepared).transform(updateLocalRepo(localRepository)).toSet();
-
+            /*
+             * update details about the local repo after the causes are determined as they expect
+             * new branches to not be found in the local details
+             */
+            updateLocalRepository(remoteBranches, localRepository);
             saveIfSkipFirstRun();
 
             GHRateLimit rateLimitAfter = github.getRateLimit();
@@ -272,8 +271,7 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
      * Remote branch for future analysing. null - all remote branches.
      */
     private Set<GHBranch> branchesToCheck(String branch, @Nonnull GHRepository remoteRepo,
-                                          GitHubBranchRepository localRepository)
-            throws IOException {
+            GitHubBranchRepository localRepository) throws IOException {
         final LinkedHashSet<GHBranch> ghBranches = new LinkedHashSet<>();
 
         if (branch != null) {
@@ -286,6 +284,26 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
         }
 
         return ghBranches;
+    }
+
+    private List<GitHubBranchCause> mapToTriggerCauses(Set<GHBranch> remoteBranches,
+            GitHubBranchRepository localRepository, LoggingTaskListenerWrapper listener) {
+        List<GitHubBranchCause> causes = remoteBranches.stream()
+                // TODO: update user whitelist filter
+                .filter(createFilterChain(localRepository, listener))
+                .map(toTriggerCause(events, localRepository, listener))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        LOG.debug("Build trigger count for [{}] : {}", localRepository.getFullName(), causes.size());
+        return causes;
+    }
+
+    private void updateLocalRepository(Set<GHBranch> remoteBranches, GitHubBranchRepository localRepository) {
+        long count = remoteBranches.stream()
+                .map(branchRepoUpdater(localRepository))
+                .count();
+        LOG.trace("Updated local branch details with [{}] repositories", count);
     }
 
     private static boolean isSupportedTriggerMode(GitHubPRTriggerMode mode) {

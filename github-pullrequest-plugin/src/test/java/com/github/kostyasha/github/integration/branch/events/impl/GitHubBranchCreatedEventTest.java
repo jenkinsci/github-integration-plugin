@@ -46,7 +46,7 @@ public class GitHubBranchCreatedEventTest {
     public void branchCreated() throws IOException {
         commonExpectations();
         assertThat(
-                event.check(null, remoteBranch, null, localRepo, listener),
+                event.check(remoteBranch, null, localRepo, listener),
                 notNullValue()
         );
     }
@@ -55,7 +55,7 @@ public class GitHubBranchCreatedEventTest {
     public void branchNotChangedExisted() throws IOException {
         commonExpectations();
         assertThat(
-                event.check(null, remoteBranch, localBranch, localRepo, listener),
+                event.check(remoteBranch, localBranch, localRepo, listener),
                 nullValue()
         );
     }
@@ -65,7 +65,7 @@ public class GitHubBranchCreatedEventTest {
     public void branchNotChangedNotExisted() throws IOException {
         commonExpectations();
         assertThat(
-                event.check(null, null, null, localRepo, listener),
+                event.check(null, null, localRepo, listener),
                 nullValue()
         );
     }
@@ -75,7 +75,7 @@ public class GitHubBranchCreatedEventTest {
     public void branchDeleted() throws IOException {
         commonExpectations();
         assertThat(
-                event.check(null, null, localBranch, localRepo, listener),
+                event.check(null, localBranch, localRepo, listener),
                 nullValue()
         );
     }
