@@ -30,7 +30,7 @@ public class GitHubPRBranchRestriction implements Describable<GitHubPRBranchRest
     public GitHubPRBranchRestriction(String targetBranch) {
         this.targetBranch = targetBranch.trim();
         //TODO check if System.lineSeparator() is correct separator
-        this.targetBranchList = new HashSet<String>(Arrays.asList(targetBranch.split(System.lineSeparator())));
+        this.targetBranchList = new HashSet<>(Arrays.asList(targetBranch.split(System.lineSeparator())));
         targetBranchList.remove("");
     }
 
