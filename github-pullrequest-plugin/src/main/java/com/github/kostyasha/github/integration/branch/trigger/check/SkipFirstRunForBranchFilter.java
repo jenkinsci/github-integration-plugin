@@ -1,8 +1,10 @@
 package com.github.kostyasha.github.integration.branch.trigger.check;
 
-import com.google.common.base.Predicate;
+
 import org.jenkinsci.plugins.github.pullrequest.utils.LoggingTaskListenerWrapper;
 import org.kohsuke.github.GHBranch;
+
+import java.util.function.Predicate;
 
 /**
  * @author Kanstantsin Shautsou
@@ -21,7 +23,7 @@ public class SkipFirstRunForBranchFilter implements Predicate<GHBranch> {
     }
 
     @Override
-    public boolean apply(GHBranch remoteBranch) {
+    public boolean test(GHBranch remoteBranch) {
         if (skipFirstRun) {
             logger.info("Skipping first run for branch '{}'", remoteBranch.getName());
             return false;

@@ -34,6 +34,14 @@ f.block {
         f.entry(title: "Skip older branches on first run", field: "skipFirstRun") {
             f.checkbox()
         }
+        
+        f.entry(title: _("Branch Filters"), help: descriptor.getHelpFile('filters')) {
+            f.hetero_list(name: "filters",
+                    items: instance.filters,
+                    descriptors: descriptor.getFilterDescriptors(),
+                    hasHeader: true
+            )
+        }
 
         f.entry(title: _("Trigger Events"), help: descriptor.getHelpFile('events')) {
             f.hetero_list(name: "events",
@@ -42,9 +50,5 @@ f.block {
                     hasHeader: true
             )
         }
-
-        f.optionalProperty(title: "Experimental: User Restriction", field: "userRestriction")
-
-        f.optionalProperty(title: "Experimental: Branch Restriction", field: "branchRestriction")
     }
 }
