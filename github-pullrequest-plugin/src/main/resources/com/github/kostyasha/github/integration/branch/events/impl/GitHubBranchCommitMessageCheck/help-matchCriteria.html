@@ -1,0 +1,17 @@
+<div>
+    Inclusion/Exclusion uses pattern matching
+    <br>
+    <br>
+    .*\[maven-release-plugin\].*
+    <br>
+    The example above illustrates that if only revisions with "[maven-release-plugin]" message in first comment line have
+    been committed to the SCM a build will not occur.
+    <br>
+    <br>
+    You can create more complex patterns using embedded flag expressions.
+    <br>
+    <br>
+    (?s).*FOO.*
+    <br>
+    This example will search FOO message in all comment lines.
+</div>
