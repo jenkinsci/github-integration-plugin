@@ -106,7 +106,7 @@ public class GitHubBranchCommitChecks extends GitHubBranchEvent {
         return checks;
     }
 
-    void setChecks(List<GitHubBranchCommitCheck> checks) {
+    public void setChecks(List<GitHubBranchCommitCheck> checks) {
         this.checks = checks;
     }
 

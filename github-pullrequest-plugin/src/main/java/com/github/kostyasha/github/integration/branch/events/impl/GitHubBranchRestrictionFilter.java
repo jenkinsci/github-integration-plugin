@@ -67,6 +67,11 @@ public class GitHubBranchRestrictionFilter extends GitHubBranchEvent {
         this.matchAsPattern = matchAsPattern;
     }
 
+    // visible for testing
+    public Set<String> getMatchCriteria() {
+        return matchCriteria;
+    }
+
     @Override
     public GitHubBranchCause check(GitHubBranchTrigger gitHubBranchTrigger, GHBranch remoteBranch, GitHubBranch localBranch,
                                    GitHubBranchRepository localRepo, TaskListener listener) {
@@ -125,4 +130,5 @@ public class GitHubBranchRestrictionFilter extends GitHubBranchEvent {
             return DISPLAY_NAME;
         }
     }
+
 }

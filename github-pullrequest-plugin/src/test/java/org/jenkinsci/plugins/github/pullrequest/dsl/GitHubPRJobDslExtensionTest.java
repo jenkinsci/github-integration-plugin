@@ -1,26 +1,28 @@
 package org.jenkinsci.plugins.github.pullrequest.dsl;
 
 import com.github.kostyasha.github.integration.branch.GitHubBranchTrigger;
-import hudson.model.Descriptor;
+import com.github.kostyasha.github.integration.branch.events.GitHubBranchEvent;
+import com.github.kostyasha.github.integration.branch.events.impl.GitHubBranchCommitChecks;
+import com.github.kostyasha.github.integration.branch.events.impl.GitHubBranchCommitMessageCheck;
+import com.github.kostyasha.github.integration.branch.events.impl.GitHubBranchRestrictionFilter;
+
 import hudson.model.FreeStyleProject;
-import hudson.tasks.Builder;
-import hudson.tasks.Publisher;
 import hudson.triggers.Trigger;
-import hudson.util.DescribableList;
-import javaposse.jobdsl.plugin.ExecuteDslScripts;
-import javaposse.jobdsl.plugin.LookupStrategy;
-import javaposse.jobdsl.plugin.RemovedJobAction;
-import javaposse.jobdsl.plugin.RemovedViewAction;
+
 import org.apache.commons.io.IOUtils;
-import org.jenkinsci.plugins.github.pullrequest.GitHubPRTrigger;
-import org.jenkinsci.plugins.github.pullrequest.builders.GitHubPRStatusBuilder;
-import org.jenkinsci.plugins.github.pullrequest.publishers.impl.GitHubPRBuildStatusPublisher;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
 import java.util.Collection;
 
+import javaposse.jobdsl.plugin.ExecuteDslScripts;
+import javaposse.jobdsl.plugin.LookupStrategy;
+import javaposse.jobdsl.plugin.RemovedJobAction;
+import javaposse.jobdsl.plugin.RemovedViewAction;
+
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -28,7 +30,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.jenkinsci.plugins.github.pullrequest.GitHubPRTriggerMode.HEAVY_HOOKS_CRON;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author Kanstantsin Shautsou
@@ -72,8 +74,29 @@ public class GitHubPRJobDslExtensionTest {
         assertThat("Should add trigger of GHPR class", trigger, instanceOf(GitHubBranchTrigger.class));
         assertThat("Should have pre status", trigger.isPreStatus(), equalTo(true));
         assertThat("Should have cancel queued", trigger.isCancelQueued(), equalTo(true));
-        assertThat("Should add events", trigger.getEvents(), hasSize(3));
+        assertThat("Should add events", trigger.getEvents(), hasSize(5));
         assertThat("Should set mode", trigger.getTriggerMode(), equalTo(HEAVY_HOOKS_CRON));
+
+        /*
+         * note: this are explicity placed in the first and second positions so it's easier to
+         * pluck them back out for explicit testing
+         */
+        verifyBranchFilter(trigger.getEvents().get(0));
+        verifyCommitChecks(trigger.getEvents().get(1));
     }
 
+    private void verifyCommitChecks(GitHubBranchEvent gitHubBranchEvent) {
+        GitHubBranchCommitChecks commitChecks = (GitHubBranchCommitChecks) gitHubBranchEvent;
+        assertThat("Has commit checks", commitChecks.getChecks(), hasSize(1));
+
+        GitHubBranchCommitMessageCheck messageCheck = (GitHubBranchCommitMessageCheck) commitChecks.getChecks().get(0);
+        assertThat("Has match critiera", messageCheck.getMatchCriteria(), notNullValue());
+    }
+
+    private void verifyBranchFilter(GitHubBranchEvent gitHubBranchEvent) {
+        GitHubBranchRestrictionFilter filter = (GitHubBranchRestrictionFilter) gitHubBranchEvent;
+
+        assertThat("Has branches", filter.getMatchCriteria(), hasSize(2));
+        assertThat("Branches match", filter.getMatchCriteria(), containsInAnyOrder("master", "other"));
+    }
 }

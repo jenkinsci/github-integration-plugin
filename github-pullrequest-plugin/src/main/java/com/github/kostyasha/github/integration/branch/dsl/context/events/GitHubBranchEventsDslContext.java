@@ -5,6 +5,7 @@ import com.github.kostyasha.github.integration.branch.events.impl.GitHubBranchCr
 import com.github.kostyasha.github.integration.branch.events.impl.GitHubBranchDeletedEvent;
 import com.github.kostyasha.github.integration.branch.events.impl.GitHubBranchHashChangedEvent;
 import javaposse.jobdsl.dsl.Context;
+import javaposse.jobdsl.plugin.ContextExtensionPoint;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +16,20 @@ import java.util.List;
 public class GitHubBranchEventsDslContext implements Context {
 
     private List<GitHubBranchEvent> events = new ArrayList<>();
+
+    public void branchRestriction(Runnable closure) {
+        GitHubBranchFilterEventDslContext filterContext = new GitHubBranchFilterEventDslContext();
+        ContextExtensionPoint.executeInContext(closure, filterContext);
+
+        events.add(filterContext.getFilter());
+    }
+
+    public void commitChecks(Runnable closure) {
+        GitHubBranchCommitChecksDslContext checksContext = new GitHubBranchCommitChecksDslContext();
+        ContextExtensionPoint.executeInContext(closure, checksContext);
+
+        events.add(checksContext.getCheck());
+    }
 
     public void created() {
         events.add(new GitHubBranchCreatedEvent());
@@ -31,5 +46,4 @@ public class GitHubBranchEventsDslContext implements Context {
     public List<GitHubBranchEvent> events() {
         return events;
     }
-
 }
