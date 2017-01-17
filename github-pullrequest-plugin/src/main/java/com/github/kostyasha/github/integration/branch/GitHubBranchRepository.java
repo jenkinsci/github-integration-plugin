@@ -101,6 +101,7 @@ public class GitHubBranchRepository extends GitHubRepository<GitHubBranchReposit
         return map;
     }
 
+    @Override
     @RequirePOST
     public FormValidation doClearRepo() throws IOException {
         FormValidation result;
@@ -122,6 +123,7 @@ public class GitHubBranchRepository extends GitHubRepository<GitHubBranchReposit
     }
 
     @Override
+    @RequirePOST
     public FormValidation doRunTrigger() throws IOException {
         FormValidation result;
         try {
@@ -148,6 +150,7 @@ public class GitHubBranchRepository extends GitHubRepository<GitHubBranchReposit
     }
 
     @Override
+    @RequirePOST
     public FormValidation doRebuildFailed() throws IOException {
         FormValidation result;
         try {
@@ -172,6 +175,7 @@ public class GitHubBranchRepository extends GitHubRepository<GitHubBranchReposit
     }
 
     @Override
+    @RequirePOST
     public FormValidation doRebuild(StaplerRequest req) throws IOException {
         FormValidation result;
 

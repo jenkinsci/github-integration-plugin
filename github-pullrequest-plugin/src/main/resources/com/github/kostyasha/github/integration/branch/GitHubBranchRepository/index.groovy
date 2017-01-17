@@ -2,6 +2,7 @@ package com.github.kostyasha.github.integration.branch.GitHubBranchRepository
 
 import com.github.kostyasha.github.integration.branch.GitHubBranchCause
 import hudson.model.Item
+import groovy.json.StringEscapeUtils
 
 def f = namespace(lib.FormTagLib);
 def l = namespace(lib.LayoutTagLib);
@@ -18,6 +19,15 @@ def makeBuildItem(def runs) {
     }
 }
 
+def escapeBranchName(def branchName) {
+   // escape anything that isn't alphanumeric
+   return StringEscapeUtils.escapeJavaScript(branchName);
+}
+
+def makeRebuildId(def branchName) {
+    // replace anything that isn't alphanumeric so it's valid html
+    return ("rebuildResult" + branchName).replaceAll(/([^a-zA-Z0-9])/, '');
+}
 
 l.layout(title: "GitHub Branch Status") {
     st.include(page: "sidepanel", it: my.job)
@@ -55,9 +65,10 @@ l.layout(title: "GitHub Branch Status") {
                 if (h.hasPermission(Item.BUILD)) {
                     tr() {
                         td() {
-                            def rebuildId = "rebuildResult" + branch.name;
+                            def rebuildId = makeRebuildId(branch.name);
+                            def escaped = escapeBranchName(branch.name);
                             form(method: "post", action: "rebuild",
-                                    onsubmit: "return callFeature(this, ${rebuildId}, {'branch' : ${branch.name} })") {
+                                    onsubmit: "return callFeature(this, ${rebuildId}, {'branchName' : '${escaped}' })") {
                                 f.submit(value: _("Rebuild"))
                                 div(id: rebuildId)
                             }
