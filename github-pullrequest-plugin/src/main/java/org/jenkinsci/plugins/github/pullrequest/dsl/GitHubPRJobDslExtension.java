@@ -45,7 +45,8 @@ public class GitHubPRJobDslExtension extends ContextExtensionPoint {
                 context.unstableAs(),
                 null,
                 null,
-                null);
+                null
+        );
     }
 
     @DslExtensionMethod(context = PublisherContext.class)
