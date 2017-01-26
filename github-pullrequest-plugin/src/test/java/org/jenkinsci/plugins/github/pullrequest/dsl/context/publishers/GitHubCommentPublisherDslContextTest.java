@@ -20,14 +20,14 @@ public class GitHubCommentPublisherDslContextTest {
     }
 
     @Test
-    public void testMarkPublishErrorsAsFailure() {
-        whenMarkPublishErrorsAsFailure();
+    public void testPublisherErrorIsFailure() {
+        whenPublisherErrorIsFailure();
         thenErrorHandlerHandlesFailures();
     }
 
     @Test
-    public void testMarkPublishErrorsAsUnstable() {
-        whenMarkPublishErrorsAsUnstable();
+    public void testPublisherErrorIsUnstable() {
+        whenPublisherErrorIsUnstable();
         thenErrorHandlerHandlesUnstable();
     }
 
@@ -79,12 +79,12 @@ public class GitHubCommentPublisherDslContextTest {
         assertThat("Verifier handles unstable", context.getPublisher().getStatusVerifier().getBuildStatus(), equalTo(Result.UNSTABLE));
     }
 
-    private void whenMarkPublishErrorsAsFailure() {
-        context.markPublishErrorsAsFailure();
+    private void whenPublisherErrorIsFailure() {
+        context.publisherErrorIsFailure();
     }
 
-    private void whenMarkPublishErrorsAsUnstable() {
-        context.markPublishErrorsAsUnstable();
+    private void whenPublisherErrorIsUnstable() {
+        context.publisherErrorIsUnstable();
     }
 
     private void whenOnlyFailedBuilds() {

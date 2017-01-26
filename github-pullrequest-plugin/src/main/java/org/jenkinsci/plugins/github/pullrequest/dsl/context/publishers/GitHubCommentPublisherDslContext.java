@@ -27,11 +27,11 @@ public class GitHubCommentPublisherDslContext implements Context {
         return new GitHubPRCommentPublisher(message, verifier, errorHandler);
     }
 
-    public void markPublishErrorsAsFailure() {
+    public void publisherErrorIsFailure() {
         errorHandler = new PublisherErrorHandler(Result.FAILURE);
     }
 
-    public void markPublishErrorsAsUnstable() {
+    public void publisherErrorIsUnstable() {
         errorHandler = new PublisherErrorHandler(Result.UNSTABLE);
     }
 

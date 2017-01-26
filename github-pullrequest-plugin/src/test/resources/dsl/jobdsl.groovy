@@ -56,7 +56,7 @@ freeStyleJob('gh-pull-request') {
         postCommentOnGH() {
             comment("comment")
             onlyFailedBuilds()
-            markPublishErrorsAsFailure()
+            publisherErrorIsFailure()
         }
     }
 }
