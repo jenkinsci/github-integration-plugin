@@ -1,15 +1,20 @@
 package org.jenkinsci.plugins.github.pullrequest;
 
 import antlr.ANTLRException;
+
 import com.cloudbees.jenkins.GitHubRepositoryName;
 import com.github.kostyasha.github.integration.generic.GitHubTrigger;
 import com.github.kostyasha.github.integration.generic.GitHubTriggerDescriptor;
+
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.Job;
 import hudson.triggers.Trigger;
+
 import jenkins.model.Jenkins;
+
 import net.sf.json.JSONObject;
+
 import org.jenkinsci.plugins.github.pullrequest.events.GitHubPREvent;
 import org.jenkinsci.plugins.github.pullrequest.events.GitHubPREventDescriptor;
 import org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRBranchRestriction;
@@ -32,8 +37,10 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -174,8 +181,8 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
         }
     }
 
-
     @CheckForNull
+    @Override
     public GitHubPRPollingLogAction getPollingLogAction() {
         if (isNull(pollingLogAction) && nonNull(job)) {
             pollingLogAction = new GitHubPRPollingLogAction(job);
@@ -320,9 +327,9 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
                                                           @Nonnull GHRepository remoteRepo,
                                                           @Nonnull GitHubPRRepository localRepo) throws IOException {
         if (prNumber != null) {
-            return Collections.singleton(remoteRepo.getPullRequest(prNumber));
+            return Collections.singleton(getPullRequests(() -> remoteRepo.getPullRequest(prNumber)));
         } else {
-            List<GHPullRequest> remotePulls = remoteRepo.getPullRequests(GHIssueState.OPEN);
+            List<GHPullRequest> remotePulls = getPullRequests(() -> remoteRepo.getPullRequests(GHIssueState.OPEN));
 
             Set<Integer> remotePRNums = from(remotePulls).transform(extractPRNumber()).toSet();
 
@@ -334,6 +341,31 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
                     .append(remotePulls)
                     .toSet();
         }
+    }
+
+    private static interface PullRequestSupplier<T> {
+        T getPullRequests() throws IOException;
+    }
+
+    private static <T> T getPullRequests(PullRequestSupplier<T> supplier) throws IOException {
+        T pullRequests = null;
+
+        int count = 0;
+        int retries = 3;
+        while (count++ < retries) {
+            try {
+                pullRequests = supplier.getPullRequests();
+                break;
+            } catch (IOException e) {
+                if (count == retries) {
+                    throw e;
+                }
+
+                LOGGER.debug("Failed retrieving pull request(s), retrying...", e);
+            }
+        }
+
+        return pullRequests;
     }
 
     @Override
