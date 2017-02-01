@@ -50,12 +50,12 @@ public class GitHubPRJobDslExtension extends ContextExtensionPoint {
     }
 
     @DslExtensionMethod(context = PublisherContext.class)
-    public Object commentGHPR() {
+    public Object commentPullRequestOnGH() {
         return GitHubCommentPublisherDslContext.DEFAULT_PUBLISHER;
     }
 
     @DslExtensionMethod(context = PublisherContext.class)
-    public Object commentGHPR(Runnable closure) {
+    public Object commentPullRequestOnGH(Runnable closure) {
         GitHubCommentPublisherDslContext context = new GitHubCommentPublisherDslContext();
         executeInContext(closure, context);
 
