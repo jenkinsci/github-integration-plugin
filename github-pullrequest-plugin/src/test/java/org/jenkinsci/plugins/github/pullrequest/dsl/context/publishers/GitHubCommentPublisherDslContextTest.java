@@ -100,6 +100,6 @@ public class GitHubCommentPublisherDslContextTest {
     }
 
     private void whenSetPublisherComment() {
-        context.comment(COMMENT);
+        context.message(COMMENT);
     }
 }

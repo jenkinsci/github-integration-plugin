@@ -19,7 +19,7 @@ public class GitHubCommentPublisherDslContext implements Context {
 
     private StatusVerifier verifier;
 
-    public void comment(String comment) {
+    public void message(String comment) {
         message = new GitHubPRMessage(comment);
     }
 

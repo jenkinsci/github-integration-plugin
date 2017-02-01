@@ -53,8 +53,8 @@ freeStyleJob('gh-pull-request') {
             message('Build finished')
         }
 
-        postCommentOnGH() {
-            comment("comment")
+        commentGHPR() {
+            message("comment")
             onlyFailedBuilds()
             publisherErrorIsFailure()
         }
