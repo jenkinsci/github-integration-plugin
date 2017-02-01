@@ -9,9 +9,11 @@ import hudson.util.SequentialExecutionQueue;
 import jenkins.model.Jenkins;
 import jenkins.model.ParameterizedJobMixIn;
 import jenkins.triggers.SCMTriggerItem;
+import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.github.GitHubPlugin;
 import org.jenkinsci.plugins.github.internal.GHPluginConfigException;
 import org.kohsuke.github.GitHub;
+import org.kohsuke.stapler.StaplerRequest;
 
 import javax.annotation.Nonnull;
 import java.net.URI;
@@ -66,6 +68,14 @@ public abstract class GitHubTriggerDescriptor extends TriggerDescriptor {
         } else {
             throw new GHPluginConfigException("Can't find appropriate client for github repo <%s>", uri);
         }
+    }
+
+    @Override
+    public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
+        req.bindJSON(this, formData);
+
+        save();
+        return super.configure(req, formData);
     }
 
     @Override

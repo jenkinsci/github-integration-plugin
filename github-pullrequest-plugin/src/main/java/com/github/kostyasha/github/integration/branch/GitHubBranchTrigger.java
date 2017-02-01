@@ -7,12 +7,8 @@ import com.github.kostyasha.github.integration.branch.trigger.JobRunnerForBranch
 import com.github.kostyasha.github.integration.generic.GitHubTrigger;
 import com.github.kostyasha.github.integration.generic.GitHubTriggerDescriptor;
 import hudson.Extension;
-import hudson.model.Item;
 import hudson.model.Job;
 import hudson.triggers.Trigger;
-import jenkins.model.ParameterizedJobMixIn;
-import jenkins.triggers.SCMTriggerItem;
-import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.github.pullrequest.GitHubPRTriggerMode;
 import org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRBranchRestriction;
 import org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRUserRestriction;
@@ -25,7 +21,6 @@ import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.StaplerRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -288,22 +283,8 @@ public class GitHubBranchTrigger extends GitHubTrigger<GitHubBranchTrigger> {
         }
 
         @Override
-        public boolean isApplicable(Item item) {
-            return item instanceof Job && nonNull(SCMTriggerItem.SCMTriggerItems.asSCMTriggerItem(item))
-                    && item instanceof ParameterizedJobMixIn.ParameterizedJob;
-        }
-
-        @Override
         public String getDisplayName() {
             return "Experimental: GitHub Branches";
-        }
-
-        @Override
-        public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
-            req.bindJSON(this, formData);
-
-            save();
-            return super.configure(req, formData);
         }
 
         // list all available descriptors for choosing in job configuration

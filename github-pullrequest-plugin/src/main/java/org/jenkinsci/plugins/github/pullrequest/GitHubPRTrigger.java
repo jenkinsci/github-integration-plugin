@@ -9,7 +9,6 @@ import hudson.Util;
 import hudson.model.Job;
 import hudson.triggers.Trigger;
 import jenkins.model.Jenkins;
-import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.github.pullrequest.events.GitHubPREvent;
 import org.jenkinsci.plugins.github.pullrequest.events.GitHubPREventDescriptor;
 import org.jenkinsci.plugins.github.pullrequest.restrictions.GitHubPRBranchRestriction;
@@ -25,7 +24,6 @@ import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.StaplerRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +32,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -45,6 +42,8 @@ import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.base.Predicates.notNull;
 import static java.text.DateFormat.getDateTimeInstance;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
 import static org.jenkinsci.plugins.github.pullrequest.GitHubPRTriggerMode.LIGHT_HOOKS;
 import static org.jenkinsci.plugins.github.pullrequest.trigger.check.BranchRestrictionFilter.withBranchRestriction;
 import static org.jenkinsci.plugins.github.pullrequest.trigger.check.LocalRepoUpdater.updateLocalRepo;
@@ -299,7 +298,7 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
             return causes;
         } catch (IOException e) {
             listener.error("Can't get build causes: ", e);
-            return Collections.emptyList();
+            return emptyList();
         }
     }
 
@@ -314,7 +313,7 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
                                                           @Nonnull GHRepository remoteRepo,
                                                           @Nonnull GitHubPRRepository localRepo) throws IOException {
         if (prNumber != null) {
-            return Collections.singleton(remoteRepo.getPullRequest(prNumber));
+            return singleton(remoteRepo.getPullRequest(prNumber));
         } else {
             List<GHPullRequest> remotePulls = remoteRepo.getPullRequests(GHIssueState.OPEN);
 
@@ -345,14 +344,6 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
         @Override
         public String getDisplayName() {
             return "Build GitHub Pull Requests";
-        }
-
-        @Override
-        public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
-            req.bindJSON(this, formData);
-
-            save();
-            return super.configure(req, formData);
         }
 
         // list all available descriptors for choosing in job configuration
