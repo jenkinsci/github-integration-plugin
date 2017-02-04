@@ -44,6 +44,7 @@ import static com.google.common.base.Predicates.notNull;
 import static java.text.DateFormat.getDateTimeInstance;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
+import static com.github.kostyasha.github.integration.generic.utils.RetryableGitHubOperation.execute;
 import static org.jenkinsci.plugins.github.pullrequest.GitHubPRTriggerMode.LIGHT_HOOKS;
 import static org.jenkinsci.plugins.github.pullrequest.trigger.check.BranchRestrictionFilter.withBranchRestriction;
 import static org.jenkinsci.plugins.github.pullrequest.trigger.check.LocalRepoUpdater.updateLocalRepo;
@@ -175,6 +176,7 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
 
 
     @CheckForNull
+    @Override
     public GitHubPRPollingLogAction getPollingLogAction() {
         if (isNull(pollingLogAction) && nonNull(job)) {
             pollingLogAction = new GitHubPRPollingLogAction(job);
@@ -319,9 +321,9 @@ public class GitHubPRTrigger extends GitHubTrigger<GitHubPRTrigger> {
                                                           @Nonnull GHRepository remoteRepo,
                                                           @Nonnull GitHubPRRepository localRepo) throws IOException {
         if (prNumber != null) {
-            return singleton(remoteRepo.getPullRequest(prNumber));
+            return execute(() -> singleton(remoteRepo.getPullRequest(prNumber)));
         } else {
-            List<GHPullRequest> remotePulls = remoteRepo.getPullRequests(GHIssueState.OPEN);
+            List<GHPullRequest> remotePulls = execute(() -> remoteRepo.getPullRequests(GHIssueState.OPEN));
 
             Set<Integer> remotePRNums = from(remotePulls).transform(extractPRNumber()).toSet();
 
