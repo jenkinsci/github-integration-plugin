@@ -19,8 +19,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import static com.github.kostyasha.github.integration.generic.utils.RetryableGitHubOperation.execute;
 import static org.apache.commons.lang3.builder.ToStringStyle.SHORT_PREFIX_STYLE;
 import static org.jenkinsci.plugins.github.pullrequest.utils.ObjectsUtil.isNull;
 
@@ -59,8 +61,8 @@ public class GitHubPRPullRequest {
     public GitHubPRPullRequest(GHPullRequest pr) throws IOException {
         userLogin = pr.getUser().getLogin();
         number = pr.getNumber();
-        prUpdatedAt = pr.getUpdatedAt();
-        issueUpdatedAt = pr.getIssueUpdatedAt();
+        prUpdatedAt = pr.getIssueUpdatedAt();
+        issueUpdatedAt = pr.getUpdatedAt();
         headSha = pr.getHead().getSha();
         headRef = pr.getHead().getRef();
         title = pr.getTitle();
@@ -69,7 +71,8 @@ public class GitHubPRPullRequest {
 
         try {
             Date maxDate = new Date(0);
-            for (GHIssueComment comment : pr.getComments()) {
+            List<GHIssueComment> comments = execute(() -> pr.getComments());
+            for (GHIssueComment comment : comments) {
                 if (comment.getCreatedAt().compareTo(maxDate) > 0) {
                     maxDate = comment.getCreatedAt();
                 }
@@ -81,7 +84,7 @@ public class GitHubPRPullRequest {
         }
 
         try {
-            userEmail = pr.getUser().getEmail();
+            userEmail = execute(() -> pr.getUser().getEmail());
         } catch (Exception e) {
             LOGGER.error("Can't get GitHub user email.", e);
             userEmail = "";
@@ -90,7 +93,7 @@ public class GitHubPRPullRequest {
         GHRepository remoteRepo = pr.getRepository();
 
         try {
-            updateLabels(remoteRepo.getIssue(number).getLabels());
+            updateLabels(execute(() -> remoteRepo.getIssue(number).getLabels()));
         } catch (IOException e) {
             LOGGER.error("Can't retrieve label list: {}", e);
             inBadState = true;
@@ -98,7 +101,7 @@ public class GitHubPRPullRequest {
 
         // see https://github.com/kohsuke/github-api/issues/111
         try {
-            mergeable = pr.getMergeable();
+            mergeable = execute(() -> pr.getMergeable());
         } catch (IOException e) {
             LOGGER.error("Can't get mergeable status.", e);
             mergeable = false;
