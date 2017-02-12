@@ -1,17 +1,19 @@
-package com.github.kostyasha.github.integration.branch.events.impl;
+package com.github.kostyasha.github.integration.branch.events.impl.commitchecks.impl;
 
 import com.github.kostyasha.github.integration.branch.GitHubBranch;
 import com.github.kostyasha.github.integration.branch.GitHubBranchCause;
 import com.github.kostyasha.github.integration.branch.GitHubBranchRepository;
 
-import com.github.kostyasha.github.integration.branch.events.impl.commitchecks.impl.GitHubBranchCommitMessageCheck;
 import org.junit.Before;
 import org.junit.Test;
 import org.kohsuke.github.GHBranch;
+import org.kohsuke.github.GHCommit.ShortInfo;
 import org.kohsuke.github.GHCompare.Commit;
 import org.kohsuke.github.GHCompare.InnerCommit;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
+import java.io.IOException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -43,6 +45,9 @@ public class GitHubBranchCommitMessageCheckTest {
 
     private GitHubBranchCause result;
 
+    @Mock
+    private ShortInfo mockShortCommit;
+
     @Before
     public void begin() {
         MockitoAnnotations.initMocks(this);
@@ -50,30 +55,52 @@ public class GitHubBranchCommitMessageCheckTest {
     }
 
     @Test
-    public void testExcludeCommit() {
-        givenACommitMessage();
+    public void testComparedCommitsSkipBuild() {
+        givenCommitMessages();
         givenAMessagePattern();
         givenMessageShouldBeExcluded();
-        whenEventIsChecked();
+        whenComparedCommitsAreChecked();
         thenBuildIsSkipped();
     }
 
     @Test
-    public void testIncludeCommit() {
-        givenACommitMessage();
+    public void testComparedCommitsReturnNoCause() {
+        givenCommitMessages();
         givenAMessagePattern();
-        whenEventIsChecked();
+        whenComparedCommitsAreChecked();
         thenCheckHasNoEffect();
     }
 
     @Test
-    public void testNoPatternsSpecified() {
+    public void testLastCommitReturnNoCause() throws Exception {
         givenACommitMessage();
-        whenEventIsChecked();
+        givenAMessagePattern();
+        whenLastCommitIsChecked();
         thenCheckHasNoEffect();
     }
 
-    private void givenACommitMessage() {
+    @Test
+    public void testLastCommitSkipBuild() throws Exception {
+        givenACommitMessage();
+        givenAMessagePattern();
+        givenMessageShouldBeExcluded();
+        whenLastCommitIsChecked();
+        thenBuildIsSkipped();
+    }
+
+    @Test
+    public void testNoPatternsSpecified() {
+        givenCommitMessages();
+        whenComparedCommitsAreChecked();
+        thenCheckHasNoEffect();
+    }
+
+    private void givenACommitMessage() throws IOException {
+        when(mockShortCommit.getMessage()).thenReturn("[maven-release-plugin] commit message");
+        when(mockCommit.getCommitShortInfo()).thenReturn(mockShortCommit);
+    }
+
+    private void givenCommitMessages() {
         when(mockInnerCommit.getMessage()).thenReturn("commit message");
         when(mockInnerCommit.getMessage()).thenReturn("[maven-release-plugin] commit message");
 
@@ -98,7 +125,11 @@ public class GitHubBranchCommitMessageCheckTest {
         assertThat("build triggered", result, nullValue());
     }
 
-    private void whenEventIsChecked() {
+    private void whenComparedCommitsAreChecked() {
         result = event.check(mockRemoteBranch, mockRepo, mockCommits);
+    }
+
+    private void whenLastCommitIsChecked() {
+        result = event.check(mockRemoteBranch, mockRepo, mockCommit);
     }
 }

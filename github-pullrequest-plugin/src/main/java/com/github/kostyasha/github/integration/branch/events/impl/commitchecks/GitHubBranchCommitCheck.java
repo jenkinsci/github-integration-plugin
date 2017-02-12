@@ -8,6 +8,7 @@ import hudson.ExtensionPoint;
 import hudson.model.AbstractDescribableImpl;
 
 import org.kohsuke.github.GHBranch;
+import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHCompare.Commit;
 
 /**
@@ -30,4 +31,16 @@ public abstract class GitHubBranchCommitCheck extends AbstractDescribableImpl<Gi
      * @return <code>GitHubBranchCause</code> instance indicating if the build should be skipped, <code>null</code> otherwise.
      */
     public abstract GitHubBranchCause check(GHBranch remoteBranch, GitHubBranchRepository localRepo, Commit[] commits);
+
+    /**
+     * Check used to determine if some associated commit property, such as the commit message, should prevent a build from being triggered.
+     *
+     * <p>This method is called when the repository is not yet known to the plugin.</p>
+     *
+     * @param remoteBranch current branch state from GH.
+     * @param localRepo local repository state.
+     * @param commit last commit in the remote repository.
+     * @return <code>GitHubBranchCause</code> instance indicating if the build should be skipped, <code>null</code> otherwise.
+     */
+    public abstract GitHubBranchCause check(GHBranch remoteBranch, GitHubBranchRepository localRepo, GHCommit commit);
 }
