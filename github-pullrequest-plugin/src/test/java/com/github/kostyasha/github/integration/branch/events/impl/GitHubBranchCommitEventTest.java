@@ -9,6 +9,7 @@ import org.jenkinsci.plugins.github.pullrequest.utils.LoggingTaskListenerWrapper
 import org.junit.Before;
 import org.junit.Test;
 import org.kohsuke.github.GHBranch;
+import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHCompare;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -25,21 +26,24 @@ import static org.mockito.Mockito.when;
 
 public class GitHubBranchCommitEventTest {
 
+    private GitHubBranchCommitEvent check;
+
     private GHCompare.Commit[] commits;
 
-    private GitHubBranchCommitEvent check;
+    @Mock
+    private PrintStream logger;
 
     @Mock
     private GitHubBranchCause mockCause;
+
+    @Mock
+    private GHCommit mockCommit;
 
     @Mock
     private GitHubBranchCommitCheck mockCommitCheck;
 
     @Mock
     private LoggingTaskListenerWrapper mockListener;
-
-    @Mock
-    private PrintStream lloger;
 
     @Mock
     private GitHubBranch mockLocalBranch;
@@ -58,12 +62,18 @@ public class GitHubBranchCommitEventTest {
     @Before
     public void before() {
         MockitoAnnotations.initMocks(this);
+        when(mockListener.getLogger()).thenReturn(logger);
 
         commits = new GHCompare.Commit[0];
         check = new GitHubBranchCommitEvent(Arrays.asList(mockCommitCheck)) {
             @Override
             GHCompare.Commit[] getComparedCommits(GitHubBranch localBranch, GHBranch remoteBranch) throws IOException {
                 return commits;
+            }
+
+            @Override
+            GHCommit getLastCommit(GHBranch remoteBranch) throws IOException {
+                return mockCommit;
             }
         };
     }
@@ -90,15 +100,36 @@ public class GitHubBranchCommitEventTest {
     }
 
     @Test
-    public void testFirstCommit() throws Exception {
-        when(mockListener.getLogger()).thenReturn(lloger);
-        givenTheFirstCommit();
+    public void testFirstSeenCommitDoesNotTriggerBuild() throws Exception {
+        givenLocalRepositoryIsNull();
+        givenCheckLastCommitReturnsCause();
+        givenSkippableBranchCause();
+        whenCheckCommits();
+        thenCheckIsSkipped();
+    }
+
+    @Test
+    public void testFirstSeenCommitTriggersBuild() throws Exception {
+        givenLocalRepositoryIsNull();
+        givenCheckLastCommitReturnsNull();
         whenCheckCommits();
         thenNoCauseReturned();
     }
 
+    private void givenCheckLastCommitReturnsCause() {
+        when(mockCommitCheck.check(mockRemoteBranch, mockRepo, mockCommit)).thenReturn(mockCause);
+    }
+
+    private void givenCheckLastCommitReturnsNull() {
+        when(mockCommitCheck.check(mockRemoteBranch, mockRepo, mockCommit)).thenReturn(null);
+    }
+
     private void givenChecksReturnNull() {
         when(mockCommitCheck.check(mockRemoteBranch, mockRepo, commits)).thenReturn(null);
+    }
+
+    private void givenLocalRepositoryIsNull() throws Exception {
+        mockLocalBranch = null;
     }
 
     private void givenNoChecksAreConfigured() {
@@ -108,10 +139,6 @@ public class GitHubBranchCommitEventTest {
     private void givenSkippableBranchCause() {
         when(mockCause.isSkip()).thenReturn(true);
         when(mockCommitCheck.check(mockRemoteBranch, mockRepo, commits)).thenReturn(mockCause);
-    }
-
-    private void givenTheFirstCommit() throws Exception {
-        mockLocalBranch = null;
     }
 
     private void thenAdditionalTriggersWillBeChecked() {
