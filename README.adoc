@@ -1,8 +1,8 @@
 = GitHub Integration Plugin
 
 image:https://img.shields.io/badge/java-1.8-yellow.svg["Minimal java version"]
-//image:https://scan.coverity.com/projects/XXXX/badge.svg?flat=1["Coverity Scan Build Status", link="https://scan.coverity.com/projects/kostyasha-yet-another-docker-plugin"]
-image:https://travis-ci.org/KostyaSha/github-integration-plugin.svg?branch=master["Build Status", link="https://travis-ci.org/KostyaSha/yet-another-docker-plugin"]
+//image:https://scan.coverity.com/projects/XXXX/badge.svg?flat=1["Coverity Scan Build Status", link="https://scan.coverity.com/projects/XXXX"]
+image:https://travis-ci.org/KostyaSha/github-integration-plugin.svg?branch=master["Build Status", link="https://travis-ci.org/KostyaSha/github-integration-plugin"]
 image:https://codecov.io/github/KostyaSha/github-integration-plugin/coverage.svg?branch=master["codecov.io", link="https://codecov.io/github/KostyaSha/github-integration-plugin/?branch=master"]
 image:https://img.shields.io/sonar/http/sonar.lanwen.ru/org.jenkins-ci.plugins:github-pullrequest/coverage.svg?style=flat[Coverage, link="http://sonar.lanwen.ru/dashboard/index?id=org.jenkins-ci.plugins:github-pullrequest"]
 image:https://jitpack.io/v/KostyaSha/github-integration-plugin.svg[Release,link="https://jitpack.io/#KostyaSha/github-integration-plugin"]
